@@ -1,36 +1,47 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useState, useRef  } from 'react'
+import  Button  from '@mui/material/Button'
+import TextField from '@mui/material/TextField'
 import './App.css'
 
+async function checkBearerToken(token:string) {
+  const options = {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  };
+  const response = await fetch("https://api.spacetraders.io/v2/my/agent", options);
+  const responseData = await response.json();
+  console.log(responseData);
+  return response.ok;
+}
+
+
 function App() {
-  const [count, setCount] = useState(0)
+  const [_bearerToken, registerBearerToken] = useState("")
+  const textRef = useRef({value: ""});
+
+  const submit = async () => {
+    const currentToken = textRef.current.value;
+    if(await checkBearerToken(currentToken)) {
+      registerBearerToken(currentToken);
+    }
+  }
 
   return (
     <>
       <div>
-Here's where I'll put the Bearer Token input
+<TextField
+          id="outlined-multiline-static"
+          label="Bearer Token"
+          multiline
+          rows={4}
+          inputRef={textRef}
+        />
+        <Button variant="contained" onClick={submit}>Register Bearer Token</Button>
 </div>
       <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+        {/*<!-- TODO: basic actions -->*/}
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
     </>
   )
 }
