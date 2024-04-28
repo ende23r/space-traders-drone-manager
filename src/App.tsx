@@ -2,6 +2,7 @@ import Grid from '@mui/material/Unstable_Grid2'; // Grid version 2
 
 import GameContextProvider from './GameContextProvider';
 import ShipList from './ShipList';
+import NavList from './NavList';
 
 
 function App() {
@@ -13,6 +14,9 @@ function App() {
             <div>
               <ShipList />
             </div>
+          </Grid>
+          <Grid xs={6}>
+            <NavList />
           </Grid>
           <Grid xs={6}>Details and Actions</Grid>
         </Grid>

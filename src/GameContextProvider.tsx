@@ -1,7 +1,8 @@
 import { Button, TextField } from "@mui/material";
-import { createContext, useCallback, useRef, useState } from "react"
+import { createContext, useCallback, useContext, useRef, useState } from "react"
 
 export const BearerTokenContext = createContext("");
+export const BearerTokenDispatchContext = createContext(async (_: string) => {});
 export const NavigationContext = createContext<any[]>([]);
 export const NavigationDispatchContext = createContext(() => {});
 export const ShipContext = createContext<any[]>([]);
@@ -14,6 +15,24 @@ async function checkBearerToken(token: string) {
     }
   };
   const response = await fetch("https://api.spacetraders.io/v2/my/agent", options);
+  if (!response.ok) {
+    throw new Error(`${response.status}: ${response.statusText}`);
+  }
+  return await response.json();
+}
+
+async function generateBearerToken(playerSymbol: string) {
+  const options = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      "symbol": playerSymbol,
+      "faction": "COSMIC"
+    })
+  };
+  const response = await fetch("https://api.spacetraders.io/v2/register", options);
   if (!response.ok) {
     throw new Error(`${response.status}: ${response.statusText}`);
   }
@@ -46,6 +65,39 @@ async function queryNavigationInfo(token: string, system: string) {
   return (await response.json()).data;
 }
 
+function BearerAuthSetup() {
+  const registerBearerToken = useContext(BearerTokenDispatchContext);
+  const [bearerToken, setBearerToken] = useState("");
+  const [agentSymbol, setAgentSymbol] = useState("");
+  const symbolTextRef = useRef({value: ""});
+    return (<><div>
+      <TextField
+        id="outlined-multiline-static"
+        label="Bearer Token"
+        multiline
+        rows={4}
+        value={bearerToken}
+        onChange={(e) => setBearerToken(e.target.value)}
+      />
+        <Button variant="contained" onClick={() => registerBearerToken(bearerToken)}>Register Bearer Token</Button>
+    </div>
+    <div>
+      <TextField
+        id="outlined-static"
+        label="Agent Symbol (username)"
+        value={agentSymbol}
+        onChange={(e) => {setAgentSymbol(e.target.value)}}
+      />
+        <Button variant="contained" onClick={async () => {
+          const data = await generateBearerToken(symbolTextRef.current.value);
+        console.log({data});
+        const { token } = data.data;
+          await registerBearerToken(token);
+        setBearerToken(token);
+        }}>Register New Agent</Button>
+    </div>
+    </>)
+}
 function GameContextProvider(props: {children: any}) {
   const {children} = props;
   const [bearerToken, registerBearerToken] = useState("")
@@ -53,14 +105,12 @@ function GameContextProvider(props: {children: any}) {
   const [shipList, setShipList] = useState<any[]>([])
   const [waypointList, setWaypointList] = useState<any[]>([])
 
-  const textRef = useRef({value: ""});
 
-  const tryRegisterBearerToken = async () => {
-    const currentToken = textRef.current.value;
-    const userData = await checkBearerToken(currentToken);
+  const tryRegisterBearerToken = async (token: string) => {
+    const userData = await checkBearerToken(token);
     const [sector, system] = userData.data.headquarters.split("-");
     setHomeSystem(`${sector}-${system}`)
-    registerBearerToken(currentToken);
+    registerBearerToken(token);
     pollNavigation();
     pollShips();
   }
@@ -78,26 +128,19 @@ function GameContextProvider(props: {children: any}) {
 
   return (
   <>
-    <div>
-      <TextField
-        id="outlined-multiline-static"
-        label="Bearer Token"
-        multiline
-        rows={4}
-        inputRef={textRef}
-      />
-        <Button variant="contained" onClick={tryRegisterBearerToken}>Register Bearer Token</Button>
-    </div>
     <BearerTokenContext.Provider value={bearerToken}>
+    <BearerTokenDispatchContext.Provider value={tryRegisterBearerToken}>
     <NavigationContext.Provider value={waypointList}>
     <NavigationDispatchContext.Provider value={pollNavigation}>
     <ShipContext.Provider value={shipList}>
     <ShipDispatchContext.Provider value={pollShips}>
+                  <BearerAuthSetup />
         {children}
     </ShipDispatchContext.Provider>
     </ShipContext.Provider>
     </NavigationDispatchContext.Provider>
     </NavigationContext.Provider>
+    </BearerTokenDispatchContext.Provider>
     </BearerTokenContext.Provider>
   </>);
 }
