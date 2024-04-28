@@ -49,7 +49,7 @@ function ShipCard(props: {ship: any}) {
           defaultChecked={ship.nav.status !== "DOCKED"}
           onChange={() => switchDockedStatus(ship.symbol, ship.nav.status, bearerToken )}
         />
-        {ship.nav.status} at {ship.nav.waypointSymbol}
+        {ship.nav.status} at {ship.nav.route.destination.symbol} ({ship.nav.route.destination.x}, {ship.nav.route.destination.y})
       </div>
       <div>
         Navigation: <progress value={computeRemainingCooldownFraction(ship.cooldown)} />
