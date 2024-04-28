@@ -1,6 +1,7 @@
 import { Button, TextField } from "@mui/material";
 import { createContext, useCallback, useContext,   useState } from "react"
 import { useLocalStorage } from "./hooks/useLocalStorage";
+import { api } from "./packages/SpaceTradersAPI";
 
 export const BearerTokenContext = createContext("");
 export const BearerTokenDispatchContext = createContext(async (_: string) => {});
@@ -9,17 +10,15 @@ export const NavigationDispatchContext = createContext((_: string | undefined) =
 export const ShipContext = createContext<any[]>([]);
 export const ShipDispatchContext = createContext((_: string) => {});
 
+// API for requests with a BODY: function [alias](body: BodyParam, config?: ZodiosRequestOptions): Promise<Response>;
 async function checkBearerToken(token: string) {
   const options = {
     headers: {
       Authorization: `Bearer ${token}`
     }
   };
-  const response = await fetch("https://api.spacetraders.io/v2/my/agent", options);
-  if (!response.ok) {
-    throw new Error(`${response.status}: ${response.statusText}`);
-  }
-  return await response.json();
+  const response = await api["get-my-agent"](options);
+  return response.data;
 }
 
 async function generateBearerToken(playerSymbol: string) {
@@ -34,6 +33,7 @@ async function generateBearerToken(playerSymbol: string) {
     })
   };
   const response = await fetch("https://api.spacetraders.io/v2/register", options);
+  console.log(response);
   if (!response.ok) {
     throw new Error(`${response.status}: ${response.statusText}`);
   }
@@ -54,13 +54,20 @@ async function queryShipInfo(token: string) {
 }
 
 async function queryNavigationInfo(system: string) {
-  const options = {
-  };
-  const response = await fetch(`https://api.spacetraders.io/v2/systems/${system}/waypoints`, options);
-  if (!response.ok) {
-    throw new Error(`${response.status}: ${response.statusText}`);
+  const response = await api["get-system-waypoints"]({params: {systemSymbol: system}});
+  const {total, limit} = response.meta;
+  if (total <= limit) {
+    return response.data;
   }
-  return (await response.json()).data;
+
+  const waypoints = response.data;
+  let page = 2;
+  while (waypoints.length < total) {
+    const pageResponse = await api["get-system-waypoints"]({params: {systemSymbol: system}, queries: {page}});
+    waypoints.push(...pageResponse.data);
+    page += 1;
+  }
+  return waypoints;
 }
 
 function BearerAuthSetup() {
@@ -104,8 +111,7 @@ function GameContextProvider(props: {children: any}) {
 
   const tryRegisterBearerToken = async (token: string) => {
     const userData = await checkBearerToken(token);
-    console.log({userData})
-    const [sector, system] = userData.data.headquarters.split("-");
+    const [sector, system] = userData.headquarters.split("-");
     const homeSystem = `${sector}-${system}`;
         setHomeSystem(homeSystem)
     registerBearerToken(token);

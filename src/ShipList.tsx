@@ -1,5 +1,5 @@
 import { useContext, useState } from 'react'
-import { Button, MenuItem, Paper, Select, Switch } from '@mui/material';
+import { Button, MenuItem, Paper, Select, Switch, Typography } from '@mui/material';
 import { BearerTokenContext, NavigationContext, ShipContext } from './GameContextProvider';
 
 async function switchDockedStatus(shipSymbol: string, status: string, token: string) {
@@ -67,7 +67,7 @@ function ShipList() {
   const shipList = useContext(ShipContext);
   return (
     <>
-      <p>Ship List!</p>
+      <Typography variant="h2">Ship List!</Typography>
       {shipList.map((ship) => <ShipCard key={ship.symbol} ship={ship} />)}
     </>
   );

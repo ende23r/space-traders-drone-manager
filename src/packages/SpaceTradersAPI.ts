@@ -2466,7 +2466,7 @@ Send a ship to the waypoint to access trade good prices and recent transactions.
   },
 ]);
 
-export const api = new Zodios(endpoints);
+export const api = new Zodios("https://api.spacetraders.io/v2/", endpoints);
 
 export function createApiClient(baseUrl: string, options?: ZodiosOptions) {
   return new Zodios(baseUrl, endpoints, options);

@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { NavigationContext } from "./GameContextProvider";
-import { Paper } from "@mui/material";
+import { Paper, Typography } from "@mui/material";
 
 function NavCard(props: any) {
   const {navloc} = props
@@ -15,10 +15,9 @@ function NavCard(props: any) {
 
 function NavList() {
   const navLocations = useContext(NavigationContext);
-  console.log({navLocations})
 
   return <div>
-    NavList!
+    <Typography variant="h2">Waypoints List!</Typography>
     {navLocations.map((navloc) => <NavCard navloc={navloc} />)}
     </div>;
 }
