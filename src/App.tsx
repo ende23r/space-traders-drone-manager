@@ -7,6 +7,7 @@ import Grid from '@mui/material/Unstable_Grid2'; // Grid version 2
 
 import { BearerTokenContext } from './BearerTokenContext';
 import { ShipsContext } from './ShipsContext';
+import { NavigationContext } from './NavigationContext';
 import ShipList from './ShipList';
 
 async function checkBearerToken(token: string) {
@@ -16,7 +17,11 @@ async function checkBearerToken(token: string) {
     }
   };
   const response = await fetch("https://api.spacetraders.io/v2/my/agent", options);
-  return response.ok;
+  if (!response.ok) {
+    return false;
+  }
+  // Update ship and nav info
+  return true;
 }
 
 async function updateShipInfo(token: string, updateShipCallback: any) {
@@ -46,6 +51,7 @@ function App() {
 
   return (
     <BearerTokenContext.Provider value={bearerToken}>
+    <NavigationContext.Provider value={["XXX"]}>
     <ShipsContext.Provider value={shipList}>
       <div>
 <TextField
@@ -75,6 +81,7 @@ function App() {
         </Grid>
       </div>
     </ShipsContext.Provider>
+    </NavigationContext.Provider>
     </BearerTokenContext.Provider>
   )
 }
