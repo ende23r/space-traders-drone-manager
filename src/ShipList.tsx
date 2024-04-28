@@ -1,8 +1,6 @@
 import { useContext, useState } from 'react'
-import {ShipsContext }from './ShipsContext'
 import { Button, MenuItem, Paper, Select, Switch } from '@mui/material';
-import { BearerTokenContext } from './BearerTokenContext';
-import { NavigationContext } from './NavigationContext';
+import { BearerTokenContext, NavigationContext, ShipContext } from './GameContextProvider';
 
 async function switchDockedStatus(shipSymbol: string, status: string, token: string) {
   const options = {
@@ -28,7 +26,7 @@ function computeRemainingCooldownFraction(cooldown: any) {
   return (cooldown.totalSeconds - cooldown.remainingSeconds + 0.01) / (cooldown.totalSeconds + 0.01);
 }
 
-function triggerNavigation(bearerToken: string, shipSymbol: string, destinationWaypoint: string) {
+function triggerNavigation(_bearerToken: string, _shipSymbol: string, _destinationWaypoint: string) {
   return -1;
 }
 
@@ -56,8 +54,7 @@ function ShipCard(props: {ship: any}) {
       <div>
         Navigation: <progress value={computeRemainingCooldownFraction(ship.cooldown)} />
         <Select label="Destination" value={destination} onChange={(event) => setDestination(event.target.value)}>
-          {navLocations.map((str) => <MenuItem value={str}>{str}</MenuItem>)}
-          <MenuItem value={ship.nav.waypointSymbol}>{ship.nav.waypointSymbol}</MenuItem>)
+          {navLocations.map((nav) => <MenuItem value={nav.symbol}>{nav.symbol}</MenuItem>)}
         </Select>
         <Button variant="contained" onClick={() => triggerNavigation(bearerToken, ship.symbol, destination)}>Punch it!</Button>
       </div>
@@ -67,7 +64,7 @@ function ShipCard(props: {ship: any}) {
 }
 
 function ShipList() {
-  const shipList = useContext(ShipsContext);
+  const shipList = useContext(ShipContext);
   return (
     <>
       <p>Ship List!</p>
