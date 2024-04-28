@@ -1,12 +1,13 @@
 import { Button, TextField } from "@mui/material";
-import { createContext, useCallback, useContext, useRef, useState } from "react"
+import { createContext, useCallback, useContext,   useState } from "react"
+import { useLocalStorage } from "./hooks/useLocalStorage";
 
 export const BearerTokenContext = createContext("");
 export const BearerTokenDispatchContext = createContext(async (_: string) => {});
 export const NavigationContext = createContext<any[]>([]);
-export const NavigationDispatchContext = createContext(() => {});
+export const NavigationDispatchContext = createContext((_: string | undefined) => {});
 export const ShipContext = createContext<any[]>([]);
-export const ShipDispatchContext = createContext(() => {});
+export const ShipDispatchContext = createContext((_: string) => {});
 
 async function checkBearerToken(token: string) {
   const options = {
@@ -52,11 +53,8 @@ async function queryShipInfo(token: string) {
   return (await response.json()).data;
 }
 
-async function queryNavigationInfo(token: string, system: string) {
+async function queryNavigationInfo(system: string) {
   const options = {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
   };
   const response = await fetch(`https://api.spacetraders.io/v2/systems/${system}/waypoints`, options);
   if (!response.ok) {
@@ -67,9 +65,8 @@ async function queryNavigationInfo(token: string, system: string) {
 
 function BearerAuthSetup() {
   const registerBearerToken = useContext(BearerTokenDispatchContext);
-  const [bearerToken, setBearerToken] = useState("");
+  const [bearerToken, setBearerToken] = useLocalStorage("bearerToken", "");
   const [agentSymbol, setAgentSymbol] = useState("");
-  const symbolTextRef = useRef({value: ""});
     return (<><div>
       <TextField
         id="outlined-multiline-static"
@@ -89,8 +86,7 @@ function BearerAuthSetup() {
         onChange={(e) => {setAgentSymbol(e.target.value)}}
       />
         <Button variant="contained" onClick={async () => {
-          const data = await generateBearerToken(symbolTextRef.current.value);
-        console.log({data});
+          const data = await generateBearerToken(agentSymbol);
         const { token } = data.data;
           await registerBearerToken(token);
         setBearerToken(token);
@@ -108,21 +104,22 @@ function GameContextProvider(props: {children: any}) {
 
   const tryRegisterBearerToken = async (token: string) => {
     const userData = await checkBearerToken(token);
+    console.log({userData})
     const [sector, system] = userData.data.headquarters.split("-");
-    setHomeSystem(`${sector}-${system}`)
+    const homeSystem = `${sector}-${system}`;
+        setHomeSystem(homeSystem)
     registerBearerToken(token);
-    pollNavigation();
-    pollShips();
+    await pollNavigation(homeSystem);
+    await pollShips(token);
   }
 
-  const pollShips = useCallback(async() => {
-    const data = await queryShipInfo(bearerToken);
+  const pollShips = useCallback(async(token: string) => {
+    const data = await queryShipInfo(token);
     setShipList(data);
   }, [bearerToken, setShipList]);
 
-  const pollNavigation = useCallback(async() => {
-    const data = await queryNavigationInfo(bearerToken, homeSystem);
-    console.log({navData: data})
+  const pollNavigation = useCallback(async(newHomeSystem: string | undefined) => {
+    const data = await queryNavigationInfo(newHomeSystem || homeSystem);
     setWaypointList(data);
   }, [bearerToken, setWaypointList]);
 
