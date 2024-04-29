@@ -1,6 +1,7 @@
 import { useContext, useState } from 'react'
-import { Button, MenuItem, Paper, Select, Switch, Typography } from '@mui/material';
+import { Button, Card, CardActions, CardContent, CardHeader, MenuItem, Paper, Select, Switch, Typography } from '@mui/material';
 import { BearerTokenContext, NavigationContext, ShipContext } from './GameContextProvider';
+import { api } from './packages/SpaceTradersAPI';
 
 async function switchDockedStatus(shipSymbol: string, status: string, token: string) {
   const options = {
@@ -26,8 +27,31 @@ function computeRemainingCooldownFraction(cooldown: any) {
   return (cooldown.totalSeconds - cooldown.remainingSeconds + 0.01) / (cooldown.totalSeconds + 0.01);
 }
 
-function triggerNavigation(_bearerToken: string, _shipSymbol: string, _destinationWaypoint: string) {
-  return -1;
+async function triggerNavigation(bearerToken: string, shipSymbol: string, destinationWaypoint: string) {
+  const body = {waypointSymbol: destinationWaypoint}
+  const options = {
+    headers: {
+      Authorization: `Bearer ${bearerToken}`
+    },
+    params: {
+      shipSymbol
+    }
+  };
+  const response = await api["navigate-ship"](body, options);
+  return response.data;
+}
+
+async function extract(bearerToken: string, shipSymbol: string) {
+  const options = {
+    headers: {
+      Authorization: `Bearer ${bearerToken}`
+    },
+    params: {
+      shipSymbol
+    }
+  }
+  const response = await api["extract-resources"]({}, options);
+  return response.data;
 }
 
 function ShipCard(props: {ship: any}) {
@@ -38,11 +62,11 @@ function ShipCard(props: {ship: any}) {
 
   const [destination, setDestination] = useState<string>(ship.nav.waypointSymbol)
   
-  console.log(ship);
   return (
-    <Paper>
-      <div>{ship.symbol} (Fuel: {ship.fuel.current}/{ship.fuel.capacity})</div>
-      <div>{ship.registration.role} ({ship.registration.factionSymbol})</div>
+    <Card variant="outlined">
+      <CardHeader title={ship.symbol} subheader={`${ship.registration.role} (${ship.registration.factionSymbol})`} />
+      <CardContent>
+      <Typography>(Fuel: {ship.fuel.current}/{ship.fuel.capacity})</Typography>
       <div>Cargo: {ship.cargo.units}/{ship.cargo.capacity}</div>
       <div>
         <Switch
@@ -56,10 +80,19 @@ function ShipCard(props: {ship: any}) {
         <Select label="Destination" value={destination} onChange={(event) => setDestination(event.target.value)}>
           {navLocations.map((nav) => <MenuItem value={nav.symbol}>{nav.symbol}</MenuItem>)}
         </Select>
-        <Button variant="contained" onClick={() => triggerNavigation(bearerToken, ship.symbol, destination)}>Punch it!</Button>
       </div>
       <div>Cooldown: <progress value={computeRemainingCooldownFraction(ship.cooldown)} /> </div>
-    </Paper>
+      </CardContent>
+      <CardActions>
+        <Button variant="contained" onClick={() => triggerNavigation(bearerToken, ship.symbol, destination)}>
+          Punch It!
+        </Button>
+        <Button
+          onClick={() => extract(bearerToken, ship.symbol)}>
+          Extract
+        </Button>
+      </CardActions>
+    </Card>
   )
 }
 
