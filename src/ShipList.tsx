@@ -61,6 +61,7 @@ function ShipCard(props: {ship: any}) {
   const navLocations = useContext(NavigationContext);
 
   const [destination, setDestination] = useState<string>(ship.nav.waypointSymbol)
+  const [cooldown, toggleCooldown] = useState(false)
   
   return (
     <Card variant="outlined">
@@ -88,7 +89,12 @@ function ShipCard(props: {ship: any}) {
           Punch It!
         </Button>
         <Button
-          onClick={() => extract(bearerToken, ship.symbol)}>
+          disabled={cooldown}
+          onClick={async () => {
+            const data = await extract(bearerToken, ship.symbol)
+            toggleCooldown(true);
+            setTimeout(() => toggleCooldown(false), data.cooldown.totalSeconds * 1000)
+          }}>
           Extract
         </Button>
       </CardActions>
