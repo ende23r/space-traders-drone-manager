@@ -1,11 +1,12 @@
 import Grid from '@mui/material/Unstable_Grid2'; // Grid version 2
 
-import GameContextProvider from './GameContextProvider';
+import GameContextProvider, { ContractContext } from './GameContextProvider';
 import ShipList from './ShipList';
 import NavList from './NavList';
 import { Box, Tab, Tabs } from '@mui/material';
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import ShipyardList from './ShipyardList';
+import ContractCard from './ContractList';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -35,16 +36,21 @@ function CustomTabPanel(props: TabPanelProps) {
 
 function InfoTabs() {
   const [tabIndex, setTabIndex] = useState(0);
+  const contract = useContext(ContractContext);
   return (
     <>
     <Tabs value={tabIndex} onChange={(_, v) => setTabIndex(v)}>
-      <Tab label="System Waypoints" />
+<Tab label="Contracts" />
+<Tab label="System Waypoints" />
       <Tab label="Shipyards" />
     </Tabs>
-    <CustomTabPanel value={tabIndex} index={0}>
+<CustomTabPanel value={tabIndex} index={0}>
+      <ContractCard contract={contract} />
+    </CustomTabPanel>
+<CustomTabPanel value={tabIndex} index={1}>
       <NavList />
     </CustomTabPanel>
-    <CustomTabPanel value={tabIndex} index={1}>
+    <CustomTabPanel value={tabIndex} index={2}>
       <ShipyardList />
     </CustomTabPanel>
     </>

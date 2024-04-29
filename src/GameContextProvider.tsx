@@ -1,10 +1,14 @@
+import { z } from "zod";
 import { Button, TextField } from "@mui/material";
 import { createContext, useCallback, useContext,   useState } from "react"
 import { useLocalStorage } from "./hooks/useLocalStorage";
-import { api } from "./packages/SpaceTradersAPI";
+import { api, schemas } from "./packages/SpaceTradersAPI";
+
+type Contract = z.infer<typeof schemas.Contract>;
 
 export const BearerTokenContext = createContext("");
 export const BearerTokenDispatchContext = createContext(async (_: string) => {});
+export const ContractContext = createContext({} as any);
 export const NavigationContext = createContext<any[]>([]);
 export const NavigationDispatchContext = createContext((_: string | undefined) => {});
 export const ShipContext = createContext<any[]>([]);
@@ -38,6 +42,16 @@ async function generateBearerToken(playerSymbol: string) {
     throw new Error(`${response.status}: ${response.statusText}`);
   }
   return await response.json();
+}
+
+async function getContracts(bearerToken: string) {
+  const options = {
+    headers: {
+      Authorization: `Bearer ${bearerToken}`
+    }
+  };
+  const response = await api["get-contracts"](options);
+  return response.data[0];
 }
 
 async function queryShipInfo(token: string) {
@@ -105,6 +119,7 @@ function GameContextProvider(props: {children: any}) {
   const {children} = props;
   const [bearerToken, registerBearerToken] = useState("")
   const [homeSystem, setHomeSystem] = useState("")
+  const [contract, setContract] = useState<Contract>()
   const [shipList, setShipList] = useState<any[]>([])
   const [waypointList, setWaypointList] = useState<any[]>([])
 
@@ -115,9 +130,15 @@ function GameContextProvider(props: {children: any}) {
     const homeSystem = `${sector}-${system}`;
         setHomeSystem(homeSystem)
     registerBearerToken(token);
+    await pollContract(token);
     await pollNavigation(homeSystem);
     await pollShips(token);
   }
+
+  const pollContract = useCallback(async(token: string) => {
+    const data = await getContracts(token);
+    setContract(data);
+  }, [bearerToken, setContract]);
 
   const pollShips = useCallback(async(token: string) => {
     const data = await queryShipInfo(token);
@@ -133,6 +154,7 @@ function GameContextProvider(props: {children: any}) {
   <>
     <BearerTokenContext.Provider value={bearerToken}>
     <BearerTokenDispatchContext.Provider value={tryRegisterBearerToken}>
+    <ContractContext.Provider value={contract}>
     <NavigationContext.Provider value={waypointList}>
     <NavigationDispatchContext.Provider value={pollNavigation}>
     <ShipContext.Provider value={shipList}>
@@ -143,6 +165,7 @@ function GameContextProvider(props: {children: any}) {
     </ShipContext.Provider>
     </NavigationDispatchContext.Provider>
     </NavigationContext.Provider>
+    </ContractContext.Provider>
     </BearerTokenDispatchContext.Provider>
     </BearerTokenContext.Provider>
   </>);
