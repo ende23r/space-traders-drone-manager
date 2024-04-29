@@ -3,15 +3,11 @@ import { BearerTokenContext, NavigationContext } from "./GameContextProvider";
 import { api, schemas } from "./packages/SpaceTradersAPI";
 import { Button, Card, MenuItem, Select, Typography } from "@mui/material";
 import { z } from "zod";
+import { getSystemSymbol } from "./Util";
 
 type Shipyard = z.infer<typeof schemas.Shipyard>;
 type ShipyardShip = z.infer<typeof schemas.ShipyardShip>;
 type ShipType = z.infer<typeof schemas.ShipType>;
-
-function getSystemSymbol(navSymbol: string) {
-  const [sector, system] = navSymbol.split("-");
-  return `${sector}-${system}`;
-}
 
 async function purchaseShip(bearerToken: string, shipType: ShipType, waypointSymbol: string) {
   const body = {shipType, waypointSymbol}

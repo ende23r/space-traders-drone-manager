@@ -7,6 +7,7 @@ import { Box, Tab, Tabs } from '@mui/material';
 import { useContext, useState } from 'react';
 import ShipyardList from './ShipyardList';
 import ContractCard from './ContractList';
+import TradeScreen from './TradeScreen';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -43,6 +44,7 @@ function InfoTabs() {
 <Tab label="Contracts" />
 <Tab label="System Waypoints" />
       <Tab label="Shipyards" />
+      <Tab label="Markets" />
     </Tabs>
 <CustomTabPanel value={tabIndex} index={0}>
       <ContractCard contract={contract} />
@@ -52,6 +54,9 @@ function InfoTabs() {
     </CustomTabPanel>
     <CustomTabPanel value={tabIndex} index={2}>
       <ShipyardList />
+    </CustomTabPanel>
+    <CustomTabPanel value={tabIndex} index={3}>
+      <TradeScreen />
     </CustomTabPanel>
     </>
   )
