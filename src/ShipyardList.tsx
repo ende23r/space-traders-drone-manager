@@ -1,14 +1,44 @@
 import { useContext, useEffect, useState } from "react";
-import { NavigationContext } from "./GameContextProvider";
+import { BearerTokenContext, NavigationContext } from "./GameContextProvider";
 import { api, schemas } from "./packages/SpaceTradersAPI";
-import { Card, MenuItem, Select, Typography } from "@mui/material";
+import { Button, Card, MenuItem, Select, Typography } from "@mui/material";
 import { z } from "zod";
 
 type Shipyard = z.infer<typeof schemas.Shipyard>;
+type ShipyardShip = z.infer<typeof schemas.ShipyardShip>;
+type ShipType = z.infer<typeof schemas.ShipType>;
 
 function getSystemSymbol(navSymbol: string) {
   const [sector, system] = navSymbol.split("-");
   return `${sector}-${system}`;
+}
+
+async function purchaseShip(bearerToken: string, shipType: ShipType, waypointSymbol: string) {
+  const body = {shipType, waypointSymbol}
+  const options = {
+    headers: {
+      Authorization: `Bearer ${bearerToken}`
+    }
+  };
+  const response = await api["purchase-ship"](body, options);
+  return response.data;
+}
+
+function ShipPurchaseOption(props: {data: ShipyardShip, waypointSymbol: string}) {
+  const bearerToken = useContext(BearerTokenContext);
+  const {data, waypointSymbol} = props;
+  return <Card>
+      <Typography>{data.name}
+        <Button
+          variant="contained" 
+          onClick={() => purchaseShip(bearerToken, data.type, waypointSymbol)}
+          >
+          Purchase
+        </Button>
+      </Typography>
+      <Typography>Price: {data.purchasePrice}</Typography>
+      <Typography>Crew: {data.crew.required}/{data.crew.capacity}</Typography>
+    </Card>
 }
 
 function ShipSaleList(props: {data: Shipyard | undefined}) {
@@ -17,11 +47,13 @@ function ShipSaleList(props: {data: Shipyard | undefined}) {
   return <Card>
     <Typography variant={"h3"}>{data.symbol}</Typography>
     <Typography>Modification Fee: {data.modificationsFee}</Typography>
-    {data.shipTypes.map((shipType) => shipType.type)}
+    {/*<Typography>{data.shipTypes.map((shipType) => shipType.type)}</Typography>*/}
+    {data.ships ? data.ships.map((ship) => <ShipPurchaseOption data={ship} waypointSymbol={data.symbol} />) : null}
     </Card>;
 }
 
 function ShipyardList() {
+  const bearerToken = useContext(BearerTokenContext);
   const navLocations = useContext(NavigationContext);
   const shipyardLocations = navLocations.filter((navloc) => navloc.traits.some((trait: any) => trait.symbol === "SHIPYARD"))
   const shipyardSymbols = shipyardLocations.map((navloc) => navloc.symbol);
@@ -31,7 +63,11 @@ function ShipyardList() {
 
   useEffect(() => {
     const queryShipyard = async() => {
-      const response = await api["get-shipyard"]({params: {systemSymbol: getSystemSymbol(shipyardSelected), waypointSymbol: shipyardSelected}});
+      const response = await api["get-shipyard"]({params: {systemSymbol: getSystemSymbol(shipyardSelected), waypointSymbol: shipyardSelected},
+        headers: {
+          Authorization: `Bearer ${bearerToken}`
+        }
+      });
       setShipyardData(response.data);
     }
     if (shipyardSelected) {
