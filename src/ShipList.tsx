@@ -1,5 +1,5 @@
 import { useContext, useState } from 'react'
-import { Button, Card, CardActions, CardContent, CardHeader, MenuItem, Paper, Select, Switch, Typography } from '@mui/material';
+import { Button, Card, CardActions, CardContent, CardHeader, MenuItem,  Select, Switch, Typography } from '@mui/material';
 import { BearerTokenContext, NavigationContext, ShipContext } from './GameContextProvider';
 import { api } from './packages/SpaceTradersAPI';
 
