@@ -3,11 +3,20 @@ import Grid from '@mui/material/Unstable_Grid2'; // Grid version 2
 import GameContextProvider, { ContractContext } from './GameContextProvider';
 import ShipList from './ShipList';
 import NavList from './NavList';
-import { Box, Tab, Tabs } from '@mui/material';
+import { Alert, Box, Tab, Tabs } from '@mui/material';
 import { useContext, useState } from 'react';
 import ShipyardList from './ShipyardList';
 import ContractCard from './ContractList';
 import TradeScreen from './TradeScreen';
+
+export type AlertData = {
+  severity: "success" | "info" | "warning" | "error" | "closed"
+  message?: string
+}
+
+const defaultAlert: AlertData = {
+  severity: "closed"
+} as const;
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -63,8 +72,13 @@ function InfoTabs() {
 }
 
 function App() {
+  const [alertData, setAlertData] = useState<AlertData>(defaultAlert);
   return (
-    <GameContextProvider>
+    <>
+      <div>
+        {alertData.severity !== "closed" ? <Alert severity={alertData.severity}>{alertData.message}</Alert> : null}
+      </div>
+    <GameContextProvider updateAlert={setAlertData}>
       <div>
         <Grid container spacing={1}>
           <Grid xs={6}>
@@ -75,10 +89,10 @@ function App() {
           <Grid xs={6}>
             <InfoTabs />
           </Grid>
-          <Grid xs={6}>Details and Actions</Grid>
         </Grid>
       </div>
     </GameContextProvider>
+  </>
   )
 }
 

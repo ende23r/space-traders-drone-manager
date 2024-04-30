@@ -115,8 +115,8 @@ function BearerAuthSetup() {
     </div>
     </>)
 }
-function GameContextProvider(props: {children: any}) {
-  const {children} = props;
+function GameContextProvider(props: {updateAlert: any, children: any}) {
+  const {updateAlert, children} = props;
   const [bearerToken, registerBearerToken] = useState("")
   const [homeSystem, setHomeSystem] = useState("")
   const [contract, setContract] = useState<Contract>()
@@ -125,7 +125,14 @@ function GameContextProvider(props: {children: any}) {
 
 
   const tryRegisterBearerToken = async (token: string) => {
-    const userData = await checkBearerToken(token);
+    let userData: any
+    try {
+      userData = await checkBearerToken(token);
+      } catch (e: any) {
+      updateAlert({severity: "error", message: e.toString()})
+      throw e
+    }
+    updateAlert({ severity: "success", message: "Sucessfully checked Bearer token"})
     const [sector, system] = userData.headquarters.split("-");
     const homeSystem = `${sector}-${system}`;
         setHomeSystem(homeSystem)
