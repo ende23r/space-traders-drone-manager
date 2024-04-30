@@ -54,6 +54,19 @@ async function extract(bearerToken: string, shipSymbol: string) {
   return response.data;
 }
 
+async function fuelShip(bearerToken: string, shipSymbol: string) {
+  const options = {
+    headers: {
+      Authorization: `Bearer ${bearerToken}`
+    },
+    params: {
+      shipSymbol
+    }
+  }
+  const response = await api["refuel-ship"]({}, options);
+  return response.data;
+}
+
 function ShipCard(props: {ship: any}) {
   const {ship} = props;
 
@@ -96,6 +109,9 @@ function ShipCard(props: {ship: any}) {
             setTimeout(() => toggleCooldown(false), data.cooldown.totalSeconds * 1000)
           }}>
           Extract
+        </Button>
+        <Button onClick={() => fuelShip(bearerToken, ship.symbol)}>
+          Fill 'er up!
         </Button>
       </CardActions>
     </Card>
