@@ -1,13 +1,16 @@
 import { z } from "zod";
 import { Button, TextField } from "@mui/material";
-import { createContext, useCallback, useContext,   useState } from "react"
+import { SetStateAction, createContext, useCallback, useContext,   useState } from "react"
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import { api, schemas } from "./packages/SpaceTradersAPI";
+import { bearerOptions, useMyAgent } from "./Api";
+import { getSystemSymbol } from "./Util";
+import { useQuery } from "@tanstack/react-query";
 
 type Contract = z.infer<typeof schemas.Contract>;
 
 export const BearerTokenContext = createContext("");
-export const BearerTokenDispatchContext = createContext(async (_: string) => {});
+export const BearerTokenDispatchContext = createContext<any>((s: string) => { return s; });
 export const ContractContext = createContext({} as any);
 export const NavigationContext = createContext<any[]>([]);
 export const NavigationDispatchContext = createContext((_: string | undefined) => {});
@@ -84,7 +87,8 @@ async function queryNavigationInfo(system: string) {
   return waypoints;
 }
 
-function BearerAuthSetup() {
+function BearerAuthSetup(props: {defaultAgentSymbol: string}) {
+  const { defaultAgentSymbol } = props;
   const registerBearerToken = useContext(BearerTokenDispatchContext);
   const [bearerToken, setBearerToken] = useLocalStorage("bearerToken", "");
   const [agentSymbol, setAgentSymbol] = useState("");
@@ -103,7 +107,7 @@ function BearerAuthSetup() {
       <TextField
         id="outlined-static"
         label="Agent Symbol (username)"
-        value={agentSymbol}
+        value={agentSymbol || defaultAgentSymbol}
         onChange={(e) => {setAgentSymbol(e.target.value)}}
       />
         <Button variant="contained" onClick={async () => {
@@ -115,65 +119,39 @@ function BearerAuthSetup() {
     </div>
     </>)
 }
-function GameContextProvider(props: {updateAlert: any, children: any}) {
-  const {updateAlert, children} = props;
-  const [bearerToken, registerBearerToken] = useState("")
-  const [homeSystem, setHomeSystem] = useState("")
-  const [contract, setContract] = useState<Contract>()
-  const [shipList, setShipList] = useState<any[]>([])
-  const [waypointList, setWaypointList] = useState<any[]>([])
+function GameContextProvider(props: {  children: any}) {
+  const { children} = props;
+  const [bearerToken, setBearerToken] = useState("")
+  // const [contract, setContract] = useState<Contract>()
+  // const [shipList, setShipList] = useState<any[]>([])
+  // const [waypointList, setWaypointList] = useState<any[]>([])
 
-
-  const tryRegisterBearerToken = async (token: string) => {
-    let userData: any
-    try {
-      userData = await checkBearerToken(token);
-      } catch (e: any) {
-      updateAlert({severity: "error", message: e.toString()})
-      throw e
-    }
-    updateAlert({ severity: "success", message: "Sucessfully checked Bearer token"})
-    const [sector, system] = userData.headquarters.split("-");
-    const homeSystem = `${sector}-${system}`;
-        setHomeSystem(homeSystem)
-    registerBearerToken(token);
-    await pollContract(token);
-    await pollNavigation(homeSystem);
-    await pollShips(token);
+  const {data: agentData} = useQuery({
+    queryKey: ["get-my-agent", bearerToken],
+    queryFn: () => api["get-my-agent"](bearerOptions(bearerToken)),
+    enabled: !!bearerToken,
+    retry: false
+  })  
+  /*
+  let homeSystem = ""
+  if (status === "success") {
+    homeSystem = getSystemSymbol(agentData);
   }
-
-  const pollContract = useCallback(async(token: string) => {
-    const data = await getContracts(token);
-    setContract(data);
-  }, [bearerToken, setContract]);
-
-  const pollShips = useCallback(async(token: string) => {
-    const data = await queryShipInfo(token);
-    setShipList(data);
-  }, [bearerToken, setShipList]);
-
-  const pollNavigation = useCallback(async(newHomeSystem: string | undefined) => {
-    const data = await queryNavigationInfo(newHomeSystem || homeSystem);
-    setWaypointList(data);
-  }, [bearerToken, setWaypointList]);
+  */
 
   return (
   <>
     <BearerTokenContext.Provider value={bearerToken}>
-    <BearerTokenDispatchContext.Provider value={tryRegisterBearerToken}>
-    <ContractContext.Provider value={contract}>
+    <BearerTokenDispatchContext.Provider value={setBearerToken}>
+{/*    <ContractContext.Provider value={contract}>
     <NavigationContext.Provider value={waypointList}>
-    <NavigationDispatchContext.Provider value={pollNavigation}>
     <ShipContext.Provider value={shipList}>
-    <ShipDispatchContext.Provider value={pollShips}>
-                  <BearerAuthSetup />
-        {children}
-    </ShipDispatchContext.Provider>
-    </ShipContext.Provider>
-    </NavigationDispatchContext.Provider>
+*/}        <BearerAuthSetup defaultAgentSymbol={agentData?.data.symbol || ""} />
+        {/*children*/}
+{/*    </ShipContext.Provider>
     </NavigationContext.Provider>
     </ContractContext.Provider>
-    </BearerTokenDispatchContext.Provider>
+*/}    </BearerTokenDispatchContext.Provider>
     </BearerTokenContext.Provider>
   </>);
 }

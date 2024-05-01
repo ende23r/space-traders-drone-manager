@@ -3,20 +3,15 @@ import Grid from '@mui/material/Unstable_Grid2'; // Grid version 2
 import GameContextProvider, { ContractContext } from './GameContextProvider';
 import ShipList from './ShipList';
 import NavList from './NavList';
-import { Alert, Box, Tab, Tabs } from '@mui/material';
+import { Box, Tab, Tabs } from '@mui/material';
 import { useContext, useState } from 'react';
 import ShipyardList from './ShipyardList';
 import ContractCard from './ContractList';
 import TradeScreen from './TradeScreen';
 
-export type AlertData = {
-  severity: "success" | "info" | "warning" | "error" | "closed"
-  message?: string
-}
-
-const defaultAlert: AlertData = {
-  severity: "closed"
-} as const;
+import { QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.min.css';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -71,27 +66,45 @@ function InfoTabs() {
   )
 }
 
+const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: (error) => {
+      toast(error.toString());
+    }
+  })
+});
+
 function App() {
-  const [alertData, setAlertData] = useState<AlertData>(defaultAlert);
   return (
     <>
-      <div>
-        {alertData.severity !== "closed" ? <Alert severity={alertData.severity}>{alertData.message}</Alert> : null}
-      </div>
-    <GameContextProvider updateAlert={setAlertData}>
-      <div>
-        <Grid container spacing={1}>
-          <Grid xs={12} md={6}>
-            <div>
-              <ShipList />
-            </div>
-          </Grid>
-          <Grid xs={12} md={6}>
-            <InfoTabs />
-          </Grid>
-        </Grid>
-      </div>
-    </GameContextProvider>
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+        />
+        <QueryClientProvider client={queryClient}>
+        <GameContextProvider>
+          <div>
+            <Grid container spacing={1}>
+              <Grid xs={12} md={6}>
+                <div>
+                  <ShipList />
+                </div>
+              </Grid>
+              <Grid xs={12} md={6}>
+                <InfoTabs />
+              </Grid>
+            </Grid>
+          </div>
+        </GameContextProvider>
+    </QueryClientProvider>
   </>
   )
 }
