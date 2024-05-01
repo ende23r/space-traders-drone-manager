@@ -70,6 +70,9 @@ const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error) => {
       toast(error.toString());
+    },
+    onSuccess: (_data, query) => {
+      toast(`Successfully fetched query for key ${query.queryKey.slice(1)}`);
     }
   })
 });

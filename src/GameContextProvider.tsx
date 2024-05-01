@@ -91,19 +91,19 @@ function GameContextProvider(props: {  children: any}) {
   const [bearerToken, setBearerToken] = useState("")
 
   const {data: agentData, status: _agentStatus} = useQuery({
-    queryKey: ["get-my-agent", bearerToken],
+    queryKey: [bearerToken, "get-my-agent" ],
     queryFn: () => api["get-my-agent"](bearerOptions(bearerToken)),
     enabled: !!bearerToken,
     retry: false
   })  
   const {data: contractData} = useQuery({
-    queryKey: ["get-contracts", bearerToken],
+    queryKey: [bearerToken, "get-contracts"],
     queryFn: () => api["get-contracts"](bearerOptions(bearerToken)),
     enabled: !!bearerToken,
     retry: false
     });
   const {data: shipListData} = useQuery({
-    queryKey: ["get-my-ships", bearerToken],
+    queryKey: [bearerToken, "get-my-ships"],
     queryFn: () => api["get-my-ships"](bearerOptions(bearerToken)),
     enabled: !!bearerToken,
     retry: false
