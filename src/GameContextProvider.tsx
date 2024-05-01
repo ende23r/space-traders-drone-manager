@@ -36,20 +36,6 @@ async function generateBearerToken(playerSymbol: string) {
 }
 
 /*
-async function queryShipInfo(token: string) {
-  const options = {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  };
-  const response = await fetch("https://api.spacetraders.io/v2/my/ships", options);
-  if (!response.ok) {
-    throw new Error(`${response.status}: ${response.statusText}`);
-  }
-  return (await response.json()).data;
-}
-*/
-/*
 async function queryNavigationInfo(system: string) {
   const response = await api["get-system-waypoints"]({params: {systemSymbol: system}});
   const {total, limit} = response.meta;
@@ -116,6 +102,12 @@ function GameContextProvider(props: {  children: any}) {
     enabled: !!bearerToken,
     retry: false
     });
+  const {data: shipListData} = useQuery({
+    queryKey: ["get-my-ships", bearerToken],
+    queryFn: () => api["get-my-ships"](bearerOptions(bearerToken)),
+    enabled: !!bearerToken,
+    retry: false
+  })
   
   // let homeSystem = ""
   // if (agentStatus === "success") {
@@ -128,7 +120,7 @@ function GameContextProvider(props: {  children: any}) {
     <BearerTokenDispatchContext.Provider value={setBearerToken}>
       <ContractContext.Provider value={contractData?.data[0]}>
     <NavigationContext.Provider value={[]}>
-    <ShipContext.Provider value={[]}>
+    <ShipContext.Provider value={shipListData?.data || []}>
         <BearerAuthSetup defaultAgentSymbol={agentData?.data.symbol || ""} />
         {children}
     </ShipContext.Provider>
