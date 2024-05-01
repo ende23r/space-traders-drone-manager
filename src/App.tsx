@@ -81,12 +81,12 @@ function App() {
     <GameContextProvider updateAlert={setAlertData}>
       <div>
         <Grid container spacing={1}>
-          <Grid xs={6}>
+          <Grid xs={12} md={6}>
             <div>
               <ShipList />
             </div>
           </Grid>
-          <Grid xs={6}>
+          <Grid xs={12} md={6}>
             <InfoTabs />
           </Grid>
         </Grid>
