@@ -1,26 +1,26 @@
 import { useContext, useState } from 'react'
 import { Button, Card, CardActions, CardContent, CardHeader, MenuItem,  Select, Switch, Typography } from '@mui/material';
 import { BearerTokenContext, NavigationContext, ShipContext } from './GameContextProvider';
-import { api } from './packages/SpaceTradersAPI';
+import { api, schemas } from './packages/SpaceTradersAPI';
+import { bearerPostOptions } from './Api';
+import { useMutation } from '@tanstack/react-query';
+import { z } from "zod";
+import { toast } from 'react-toastify';
 
-async function switchDockedStatus(shipSymbol: string, status: string, token: string) {
+type Ship = z.infer<typeof schemas.Ship>;
+type ShipNavStatus = z.infer<typeof schemas.ShipNavStatus>;
+
+async function switchDockedStatus(bearerToken: string, shipSymbol: string, status: ShipNavStatus) {
+  const method = status === "DOCKED" ? "orbit-ship" : "dock-ship";
+
   const options = {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`
+    headers: bearerPostOptions(bearerToken).headers,
+    params: {
+       shipSymbol
     }
-  };
-  let url = `https://api.spacetraders.io/v2/my/ships/${shipSymbol}`
-  if (status === "DOCKED") {
-    url += "/orbit"
-  } else {
-    url += "/dock"
   }
-  
-  const response = await fetch(url, options);
-  if (!response.ok) {
-    throw new Error(`${response.status}: ${response.statusText}`);
-  }
+  const response = await api[method](/*body=*/undefined, options);
+  return response.data;
 }
 
 function computeRemainingCooldownFraction(cooldown: any) {
@@ -67,7 +67,7 @@ async function fuelShip(bearerToken: string, shipSymbol: string) {
   return response.data;
 }
 
-function ShipCard(props: {ship: any}) {
+function ShipCard(props: {ship: Ship}) {
   const {ship} = props;
 
   const bearerToken = useContext(BearerTokenContext);
@@ -75,6 +75,11 @@ function ShipCard(props: {ship: any}) {
 
   const [destination, setDestination] = useState<string>(ship.nav.waypointSymbol)
   const [cooldown, toggleCooldown] = useState(false)
+
+  const {data: _dockingData, mutate: triggerSwitchDockedStatus} = useMutation({
+    mutationKey: [bearerToken, "switch-docked", ship.symbol, ship.nav.status],
+    mutationFn: ({shipSymbol, navStatus}: any) => switchDockedStatus(bearerToken, shipSymbol, navStatus),
+  })
   
   return (
     <Card variant="outlined">
@@ -84,8 +89,15 @@ function ShipCard(props: {ship: any}) {
       <div>Cargo: {ship.cargo.units}/{ship.cargo.capacity}</div>
       <div>
         <Switch
-          defaultChecked={ship.nav.status !== "DOCKED"}
-          onChange={() => switchDockedStatus(ship.symbol, ship.nav.status, bearerToken )}
+          value={ship.nav.status !== "DOCKED"}
+          onChange={() => triggerSwitchDockedStatus({shipSymbol: ship.symbol, shipNavStatus: ship.nav.status}, {
+                onError: (error) => {
+                toast(error.toString());
+              },
+              onSuccess: (data) => {
+                toast(`Successfully fetched query for data ${JSON.stringify(data)}`);
+              }}
+          )}
         />
         {ship.nav.status} at {ship.nav.route.destination.symbol} ({ship.nav.route.destination.x}, {ship.nav.route.destination.y})
       </div>

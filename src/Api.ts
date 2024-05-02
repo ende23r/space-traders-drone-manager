@@ -55,6 +55,27 @@ export const bearerOptions = (token: string) => ({
     Authorization: `Bearer ${token}`
   }
 });
+export const bearerHeaders = (token: string) => ({
+  Authorization: `Bearer ${token}`
+});
+
+export const bearerPostOptions = (token: string) => {
+  const options = bearerOptions(token);
+  return {
+    headers: {
+      method: "POST",
+      ...options.headers
+    }
+  };
+}
+
+export const bearerPostHeaders = (token: string) => {
+  const headers = bearerHeaders(token);
+  return {
+    method: "POST",
+    ...headers
+  };
+}
 
 export function useMyShips() {
   const bearerToken = useContext(BearerTokenContext);
