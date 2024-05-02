@@ -3,7 +3,7 @@ import { createContext, useContext,   useState } from "react"
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import { api } from "./packages/SpaceTradersAPI";
 import { bearerOptions } from "./Api";
-// import { getSystemSymbol } from "./Util";
+import { getSystemSymbol } from "./Util";
 import { useQuery } from "@tanstack/react-query";
 
 export const BearerTokenContext = createContext("");
@@ -35,7 +35,6 @@ async function generateBearerToken(playerSymbol: string) {
   return await response.json();
 }
 
-/*
 async function queryNavigationInfo(system: string) {
   const response = await api["get-system-waypoints"]({params: {systemSymbol: system}});
   const {total, limit} = response.meta;
@@ -52,7 +51,6 @@ async function queryNavigationInfo(system: string) {
   }
   return waypoints;
 }
-*/
 
 function BearerAuthSetup(props: {defaultAgentSymbol: string}) {
   const { defaultAgentSymbol } = props;
@@ -90,7 +88,7 @@ function GameContextProvider(props: {  children: any}) {
   const { children } = props;
   const [bearerToken, setBearerToken] = useState("")
 
-  const {data: agentData, status: _agentStatus} = useQuery({
+  const {data: agentData, status: agentStatus} = useQuery({
     queryKey: [bearerToken, "get-my-agent" ],
     queryFn: () => api["get-my-agent"](bearerOptions(bearerToken)),
     enabled: !!bearerToken,
@@ -108,18 +106,24 @@ function GameContextProvider(props: {  children: any}) {
     enabled: !!bearerToken,
     retry: false
   })
+  let homeSystem = ""
+  if (agentStatus === "success") {
+    homeSystem = getSystemSymbol(agentData.data.headquarters);
+  }
+  const {data: navLocData} = useQuery({
+    queryKey: [bearerToken, "get-locations", homeSystem],
+    queryFn: () => queryNavigationInfo(homeSystem),
+    enabled: !!homeSystem,
+    retry: false
+  })
   
-  // let homeSystem = ""
-  // if (agentStatus === "success") {
-    // homeSystem = getSystemSymbol(agentData.data);
-  // }
 
   return (
   <>
     <BearerTokenContext.Provider value={bearerToken}>
     <BearerTokenDispatchContext.Provider value={setBearerToken}>
-      <ContractContext.Provider value={contractData?.data[0]}>
-    <NavigationContext.Provider value={[]}>
+    <ContractContext.Provider value={contractData?.data[0]}>
+    <NavigationContext.Provider value={navLocData || []}>
     <ShipContext.Provider value={shipListData?.data || []}>
         <BearerAuthSetup defaultAgentSymbol={agentData?.data.symbol || ""} />
         {children}
