@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Button, Card, CardActions, CardContent, CardHeader, MenuItem,  Select, Switch, Typography } from '@mui/material';
 import { api, schemas } from './packages/SpaceTradersAPI';
-import { useHQLocations, useMyShips, useShipNav, useSwitchDockingMutation } from './Api';
+import { globalQueryClient, useHQLocations, useMyShips, useShipNav, useSwitchDockingMutation } from './Api';
 import { z } from "zod";
 import { toast } from 'react-toastify';
 import { useLocalStorage } from './hooks/useLocalStorage';
@@ -75,12 +75,13 @@ function ShipCard(props: {ship: Ship}) {
       <div>Cargo: {ship.cargo.units}/{ship.cargo.capacity}</div>
       <div>
         <Switch
-          value={liveNavStatus?.status !== "DOCKED"}
+          checked={liveNavStatus?.status !== "DOCKED"}
           onChange={() => switchDocked({navStatus: liveNavStatus?.status}, {
                 onError: (error: any) => {
                 toast(error.toString());
               },
               onSuccess: (data: any) => {
+                globalQueryClient.invalidateQueries({queryKey: ["get-ship-nav", ship.symbol]});
                 toast(`Successfully fetched query for data ${JSON.stringify(data)}`);
               }}
           )}

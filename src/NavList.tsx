@@ -1,8 +1,5 @@
 import { Paper, Typography } from "@mui/material";
-import { bearerOptions, useLocations } from "./Api";
-import { useLocalStorage } from "./hooks/useLocalStorage";
-import { useQuery } from "@tanstack/react-query";
-import { api } from "./packages/SpaceTradersAPI";
+import {  useLocations, useMyAgent } from "./Api";
 import { getSystemSymbol } from "./Util";
 
 function NavCard(props: any) {
@@ -17,13 +14,7 @@ function NavCard(props: any) {
 }
 
 function NavList() {
-  const [bearerToken] = useLocalStorage("bearerToken", "");
-  const {data: agentData } = useQuery({
-    queryKey: [bearerToken, "get-my-agent"],
-    queryFn: () => api["get-my-agent"](bearerOptions(bearerToken)),
-    enabled: !!bearerToken,
-    retry: false
-  })  
+  const {data: agentData } = useMyAgent();  
   const homeSystem = getSystemSymbol(agentData?.data?.headquarters || "");
   
   const { data } = useLocations(homeSystem);

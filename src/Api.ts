@@ -52,6 +52,10 @@ import { api, schemas } from './packages/SpaceTradersAPI';
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import { getSystemSymbol } from "./Util";
 
+export function useBearerToken() {
+  return useLocalStorage("bearerToken", "");
+}
+
 export const bearerOptions = (token: string) => ({
   headers: {
     Authorization: `Bearer ${token}`
@@ -92,7 +96,7 @@ export function useMyAgent() {
 export function useContracts() {
   const [bearerToken] = useLocalStorage("bearerToken", "");
   return useQuery({
-    queryKey: [bearerToken, "get-contracts"],
+    queryKey: [ "get-contracts"],
     queryFn: () => api["get-contracts"](bearerOptions(bearerToken)),
     // initialData: () => [] as any[],
     enabled: !!bearerToken,
@@ -103,7 +107,7 @@ export function useContracts() {
 export function useMyShips() {
   const [bearerToken] = useLocalStorage("bearerToken", "");
   return useQuery({
-    queryKey: [bearerToken, "get-my-ships"],
+    queryKey: [ "get-my-ships"],
     queryFn: () => api["get-my-ships"](bearerOptions(bearerToken)),
     // initialData: () => [] as any[],
     enabled: !!bearerToken,
@@ -155,7 +159,7 @@ export function useShipNav(shipSymbol: string) {
     params: {shipSymbol}
   }
   return useQuery({
-    queryKey: [bearerToken, "get-ship-nav", shipSymbol],
+    queryKey: ["get-ship-nav", shipSymbol],
     queryFn: () => api["get-ship-nav"](options),
     // initialData: () => [] as any[],
     enabled: !!bearerToken,
@@ -181,7 +185,7 @@ async function switchDockedStatus(bearerToken: string, shipSymbol: string, statu
 export function useSwitchDockingMutation(shipSymbol: string) {
   const [bearerToken] = useLocalStorage("bearerToken", "");
   return useMutation({
-    mutationKey: [bearerToken, "switch-docked", shipSymbol],
+    mutationKey: [ "switch-docked", shipSymbol],
     mutationFn: ({navStatus}: any) => switchDockedStatus(bearerToken, shipSymbol, navStatus),
   })
 }

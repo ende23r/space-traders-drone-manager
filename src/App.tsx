@@ -11,8 +11,10 @@ import TradeScreen from './TradeScreen';
 
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.min.css';
-import { globalQueryClient } from './Api';
+import { globalQueryClient, useMyAgent } from './Api';
 import { QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { getSystemSymbol } from './Util';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -41,6 +43,9 @@ function CustomTabPanel(props: TabPanelProps) {
 }
 
 function InfoTabs() {
+  const {data} = useMyAgent();
+  const systemSymbol = getSystemSymbol(data?.data.headquarters || "");
+  
   const [tabIndex, setTabIndex] = useState(0);
   return (
     <>
@@ -57,7 +62,7 @@ function InfoTabs() {
       <NavList />
     </CustomTabPanel>
     <CustomTabPanel value={tabIndex} index={2}>
-      <ShipyardList />
+      <ShipyardList systemSymbol={systemSymbol} />
     </CustomTabPanel>
     <CustomTabPanel value={tabIndex} index={3}>
       <TradeScreen />
@@ -96,6 +101,7 @@ function App() {
             </Grid>
           </div>
         </GameContextProvider>
+        <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   </>
   )

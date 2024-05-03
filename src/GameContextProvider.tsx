@@ -1,9 +1,7 @@
 import { Button, TextField } from "@mui/material";
 import { useState } from "react"
 import { useLocalStorage } from "./hooks/useLocalStorage";
-import { api } from "./packages/SpaceTradersAPI";
-import { bearerOptions } from "./Api";
-import { useQuery } from "@tanstack/react-query";
+import { useMyAgent } from "./Api";
 
 // API for requests with a BODY: function [alias](body: BodyParam, config?: ZodiosRequestOptions): Promise<Response>;
 
@@ -59,14 +57,8 @@ function BearerAuthSetup(props: {defaultAgentSymbol: string}) {
 
 function GameContextProvider(props: {  children: any}) {
   const { children } = props;
-  const [bearerToken] = useLocalStorage("bearerToken", "");
 
-  const {data: agentData } = useQuery({
-    queryKey: [bearerToken, "get-my-agent"],
-    queryFn: () => api["get-my-agent"](bearerOptions(bearerToken)),
-    enabled: !!bearerToken,
-    retry: false
-  })  
+  const {data: agentData } = useMyAgent();  
   /*
   let homeSystem = ""
   if (agentStatus === "success") {
