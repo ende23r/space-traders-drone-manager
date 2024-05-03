@@ -12,7 +12,10 @@ async function checkBearerToken(token: string) {
 */
 // API for requests with a BODY: function [alias](body: BodyParam, config?: ZodiosRequestOptions): Promise<Response>;
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery , QueryCache, QueryClient, useMutation } from "@tanstack/react-query"
+import { toast } from 'react-toastify';
+import { z } from "zod";
+import { api, schemas } from './packages/SpaceTradersAPI';
 
 // We want to guarantee the following for every new API method:
 // 1. It has access to the bearer token (provided by Bearer context)
@@ -46,9 +49,8 @@ import { useQuery } from "@tanstack/react-query";
 // - nav locations
 // - nav traits
 // - contract
-import {api } from "./packages/SpaceTradersAPI";
-import { useContext } from "react";
-import { BearerTokenContext } from "./GameContextProvider";
+import { useLocalStorage } from "./hooks/useLocalStorage";
+import { getSystemSymbol } from "./Util";
 
 export const bearerOptions = (token: string) => ({
   headers: {
@@ -77,19 +79,135 @@ export const bearerPostHeaders = (token: string) => {
   };
 }
 
-export function useMyShips() {
-  const bearerToken = useContext(BearerTokenContext);
-  return useQuery({
-    queryKey: ["get-my-ships"],
-    queryFn: () => api["get-my-ships"](bearerOptions(bearerToken))
-  })  
-}
-
-export function useMyAgent(args: any) {
-  const bearerToken = useContext(BearerTokenContext);
+export function useMyAgent() {
+  const [bearerToken] = useLocalStorage("bearerToken", "");
   return useQuery({
     queryKey: ["get-my-agent"],
     queryFn: () => api["get-my-agent"](bearerOptions(bearerToken)),
-    ...args
+    enabled: !!bearerToken,
+    retry: false
   })  
 }
+
+export function useContracts() {
+  const [bearerToken] = useLocalStorage("bearerToken", "");
+  return useQuery({
+    queryKey: [bearerToken, "get-contracts"],
+    queryFn: () => api["get-contracts"](bearerOptions(bearerToken)),
+    // initialData: () => [] as any[],
+    enabled: !!bearerToken,
+    retry: false
+    });
+}
+
+export function useMyShips() {
+  const [bearerToken] = useLocalStorage("bearerToken", "");
+  return useQuery({
+    queryKey: [bearerToken, "get-my-ships"],
+    queryFn: () => api["get-my-ships"](bearerOptions(bearerToken)),
+    // initialData: () => [] as any[],
+    enabled: !!bearerToken,
+    retry: false
+  })
+}
+
+async function queryNavigationInfo(system: string) {
+  const response = await api["get-system-waypoints"]({params: {systemSymbol: system}});
+  const {total, limit} = response.meta;
+  if (total <= limit) {
+    return response.data;
+  }
+
+  const waypoints = response.data;
+  let page = 2;
+  while (waypoints.length < total) {
+    const pageResponse = await api["get-system-waypoints"]({params: {systemSymbol: system}, queries: {page}});
+    waypoints.push(...pageResponse.data);
+    page += 1;
+  }
+  return waypoints;
+}
+
+export function useLocations(systemSymbol: string) {
+  return useQuery({
+    queryKey: ["get-locations", systemSymbol],
+    queryFn: () => queryNavigationInfo(systemSymbol),
+    enabled: !!systemSymbol,
+    retry: false
+  })
+}
+
+export function useHQLocations() {
+  const {data} = useMyAgent();
+  const systemSymbol = getSystemSymbol(data?.data.headquarters || "")
+  return useQuery({
+    queryKey: ["get-locations", systemSymbol],
+    queryFn: () => queryNavigationInfo(systemSymbol),
+    enabled: !!systemSymbol,
+    retry: false
+  })
+}
+
+export function useShipNav(shipSymbol: string) {
+  const [bearerToken] = useLocalStorage("bearerToken", "");
+  const options = {
+    headers: bearerHeaders(bearerToken),
+    params: {shipSymbol}
+  }
+  return useQuery({
+    queryKey: [bearerToken, "get-ship-nav", shipSymbol],
+    queryFn: () => api["get-ship-nav"](options),
+    // initialData: () => [] as any[],
+    enabled: !!bearerToken,
+    retry: false
+  })
+}
+
+type ShipNavStatus = z.infer<typeof schemas.ShipNavStatus>;
+
+async function switchDockedStatus(bearerToken: string, shipSymbol: string, status: ShipNavStatus) {
+  const method = status === "DOCKED" ? "orbit-ship" : "dock-ship";
+
+  const options = {
+    headers: bearerPostOptions(bearerToken).headers,
+    params: {
+       shipSymbol
+    }
+  }
+  const response = await api[method](/*body=*/undefined, options);
+  return response.data;
+}
+
+export function useSwitchDockingMutation(shipSymbol: string) {
+  const [bearerToken] = useLocalStorage("bearerToken", "");
+  return useMutation({
+    mutationKey: [bearerToken, "switch-docked", shipSymbol],
+    mutationFn: ({navStatus}: any) => switchDockedStatus(bearerToken, shipSymbol, navStatus),
+  })
+}
+/* Shipyards
+  useEffect(() => {
+    const queryShipyard = async() => {
+      const response = await api["get-shipyard"]({params: {systemSymbol: getSystemSymbol(shipyardSelected), waypointSymbol: shipyardSelected},
+        headers: {
+          Authorization: `Bearer ${bearerToken}`
+        }
+      });
+      setShipyardData(response.data);
+    }
+    if (shipyardSelected) {
+      queryShipyard()
+    }
+  }, [shipyardSelected])
+*/
+
+export const globalQueryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: (error) => {
+      toast(error.toString());
+    },
+    onSuccess: (_data, query) => {
+      toast(`Successfully fetched query for key ${query.queryKey.slice(1)}`);
+    }
+  })
+});

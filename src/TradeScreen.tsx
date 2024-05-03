@@ -1,9 +1,10 @@
 import { Select, MenuItem, Typography, Paper, Container, Button, TextField } from "@mui/material";
 import { useContext, useEffect, useRef, useState } from "react";
-import { BearerTokenContext, ShipContext } from "./GameContextProvider";
 import { getSystemSymbol } from "./Util";
 import { api, schemas } from "./packages/SpaceTradersAPI";
 import { z } from "zod";
+import { useLocalStorage } from "./hooks/useLocalStorage";
+import { useMyShips } from "./Api";
 
 type Market = z.infer<typeof schemas.Market>;
 type MarketTradeGood = z.infer<typeof schemas.MarketTradeGood>;
@@ -57,8 +58,8 @@ async function sellGood(bearerToken: string, shipSymbol: string, tradeSymbol: Tr
 
 function TradeGood(props: {tradeGood: MarketTradeGood, shipSymbol: string}) {
   const { tradeGood, shipSymbol } = props;
+  const [bearerToken] = useLocalStorage("bearerToken", "");
 
-  const bearerToken = useContext(BearerTokenContext)
   const buyQuantityRef = useRef({value: "1"});
   const sellQuantityRef = useRef({value: "1"});
   
@@ -104,8 +105,8 @@ function TradeGood(props: {tradeGood: MarketTradeGood, shipSymbol: string}) {
 }
 
 function Market(props: {waypointSymbol: string, shipSymbol: string}) {
-  const bearerToken = useContext(BearerTokenContext);
   const { waypointSymbol, shipSymbol } = props;
+  const [bearerToken] = useLocalStorage("bearerToken", "");
 
   const [marketData, setMarketData] = useState<Market>();
 
@@ -143,7 +144,8 @@ function Market(props: {waypointSymbol: string, shipSymbol: string}) {
 }
 
 function TradeScreen() {
-  const shipList = useContext(ShipContext);
+  const {data: shipData} = useMyShips();
+  const shipList = shipData?.data || [];
   const shipSymbols = shipList.map((ship) => ship.symbol);
 
   const [activeShip, setActiveShip] = useState(shipSymbols[0] || "")
@@ -153,7 +155,7 @@ function TradeScreen() {
     <Select label="Active Ship" value={activeShip} onChange={(event) => setActiveShip(event.target.value)}>
       {shipSymbols.map((symbol) => <MenuItem value={symbol}>{symbol}</MenuItem>)}
     </Select>
-    <Market waypointSymbol={activeShipData.nav.waypointSymbol} shipSymbol={activeShip} />
+    <Market waypointSymbol={activeShipData?.nav.waypointSymbol || ""} shipSymbol={activeShip} />
   </>
 }
 

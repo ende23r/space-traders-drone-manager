@@ -1,9 +1,10 @@
-import { useContext, useEffect, useState } from "react";
-import { BearerTokenContext, NavigationContext } from "./GameContextProvider";
+import { useEffect, useState } from "react";
 import { api, schemas } from "./packages/SpaceTradersAPI";
 import { Button, Card, MenuItem, Select, Typography } from "@mui/material";
 import { z } from "zod";
 import { getSystemSymbol } from "./Util";
+import { useLocations } from "./Api";
+import { useLocalStorage } from "./hooks/useLocalStorage";
 
 type Shipyard = z.infer<typeof schemas.Shipyard>;
 type ShipyardShip = z.infer<typeof schemas.ShipyardShip>;
@@ -21,7 +22,7 @@ async function purchaseShip(bearerToken: string, shipType: ShipType, waypointSym
 }
 
 function ShipPurchaseOption(props: {data: ShipyardShip, waypointSymbol: string}) {
-  const bearerToken = useContext(BearerTokenContext);
+  const [bearerToken] = useLocalStorage("bearerToken", "");
   const {data, waypointSymbol} = props;
   return <Card>
       <Typography>{data.name}
@@ -48,9 +49,11 @@ function ShipSaleList(props: {data: Shipyard | undefined}) {
     </Card>;
 }
 
-function ShipyardList() {
-  const bearerToken = useContext(BearerTokenContext);
-  const navLocations = useContext(NavigationContext);
+function ShipyardList(props: {systemSymbol: string}) {
+  const { systemSymbol } = props;
+  const [bearerToken] = useLocalStorage("bearerToken", "");
+  const {data: navData} = useLocations(systemSymbol);
+  const navLocations = navData || [];
   const shipyardLocations = navLocations.filter((navloc) => navloc.traits.some((trait: any) => trait.symbol === "SHIPYARD"))
   const shipyardSymbols = shipyardLocations.map((navloc) => navloc.symbol);
 

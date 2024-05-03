@@ -1,17 +1,18 @@
 import Grid from '@mui/material/Unstable_Grid2'; // Grid version 2
 
-import GameContextProvider, { ContractContext } from './GameContextProvider';
+import GameContextProvider from './GameContextProvider';
 import ShipList from './ShipList';
 import NavList from './NavList';
 import { Box, Tab, Tabs } from '@mui/material';
-import { useContext, useState } from 'react';
+import { useState } from 'react';
 import ShipyardList from './ShipyardList';
 import ContractCard from './ContractList';
 import TradeScreen from './TradeScreen';
 
-import { QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { ToastContainer, toast } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.min.css';
+import { globalQueryClient } from './Api';
+import { QueryClientProvider } from '@tanstack/react-query';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -41,7 +42,6 @@ function CustomTabPanel(props: TabPanelProps) {
 
 function InfoTabs() {
   const [tabIndex, setTabIndex] = useState(0);
-  const contract = useContext(ContractContext);
   return (
     <>
     <Tabs value={tabIndex} onChange={(_, v) => setTabIndex(v)}>
@@ -51,7 +51,7 @@ function InfoTabs() {
       <Tab label="Markets" />
     </Tabs>
 <CustomTabPanel value={tabIndex} index={0}>
-      <ContractCard contract={contract} />
+      <ContractCard />
     </CustomTabPanel>
 <CustomTabPanel value={tabIndex} index={1}>
       <NavList />
@@ -65,17 +65,6 @@ function InfoTabs() {
     </>
   )
 }
-
-const queryClient = new QueryClient({
-  queryCache: new QueryCache({
-    onError: (error) => {
-      toast(error.toString());
-    },
-    onSuccess: (_data, query) => {
-      toast(`Successfully fetched query for key ${query.queryKey.slice(1)}`);
-    }
-  })
-});
 
 function App() {
   return (
@@ -92,7 +81,7 @@ function App() {
         pauseOnHover
         theme="light"
         />
-        <QueryClientProvider client={queryClient}>
+        <QueryClientProvider client={globalQueryClient}>
         <GameContextProvider>
           <div>
             <Grid container spacing={1}>

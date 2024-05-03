@@ -1,27 +1,12 @@
-import { useContext, useState } from 'react'
+import { useState } from 'react'
 import { Button, Card, CardActions, CardContent, CardHeader, MenuItem,  Select, Switch, Typography } from '@mui/material';
-import { BearerTokenContext, NavigationContext, ShipContext } from './GameContextProvider';
 import { api, schemas } from './packages/SpaceTradersAPI';
-import { bearerPostOptions } from './Api';
-import { useMutation } from '@tanstack/react-query';
+import { useHQLocations, useMyShips, useShipNav, useSwitchDockingMutation } from './Api';
 import { z } from "zod";
 import { toast } from 'react-toastify';
+import { useLocalStorage } from './hooks/useLocalStorage';
 
 type Ship = z.infer<typeof schemas.Ship>;
-type ShipNavStatus = z.infer<typeof schemas.ShipNavStatus>;
-
-async function switchDockedStatus(bearerToken: string, shipSymbol: string, status: ShipNavStatus) {
-  const method = status === "DOCKED" ? "orbit-ship" : "dock-ship";
-
-  const options = {
-    headers: bearerPostOptions(bearerToken).headers,
-    params: {
-       shipSymbol
-    }
-  }
-  const response = await api[method](/*body=*/undefined, options);
-  return response.data;
-}
 
 function computeRemainingCooldownFraction(cooldown: any) {
   return (cooldown.totalSeconds - cooldown.remainingSeconds + 0.01) / (cooldown.totalSeconds + 0.01);
@@ -70,16 +55,17 @@ async function fuelShip(bearerToken: string, shipSymbol: string) {
 function ShipCard(props: {ship: Ship}) {
   const {ship} = props;
 
-  const bearerToken = useContext(BearerTokenContext);
-  const navLocations = useContext(NavigationContext);
+  const [bearerToken] = useLocalStorage("bearerToken", "");
+  const {data: locationsData} = useHQLocations();
+  const navLocations = locationsData || [{symbol: ship.nav.waypointSymbol}];
+
+  const {data} = useShipNav(ship.symbol)
+  const liveNavStatus = data?.data;
 
   const [destination, setDestination] = useState<string>(ship.nav.waypointSymbol)
   const [cooldown, toggleCooldown] = useState(false)
 
-  const {data: _dockingData, mutate: triggerSwitchDockedStatus} = useMutation({
-    mutationKey: [bearerToken, "switch-docked", ship.symbol, ship.nav.status],
-    mutationFn: ({shipSymbol, navStatus}: any) => switchDockedStatus(bearerToken, shipSymbol, navStatus),
-  })
+  const {mutate: switchDocked} = useSwitchDockingMutation(ship.symbol);
   
   return (
     <Card variant="outlined">
@@ -89,17 +75,17 @@ function ShipCard(props: {ship: Ship}) {
       <div>Cargo: {ship.cargo.units}/{ship.cargo.capacity}</div>
       <div>
         <Switch
-          value={ship.nav.status !== "DOCKED"}
-          onChange={() => triggerSwitchDockedStatus({shipSymbol: ship.symbol, shipNavStatus: ship.nav.status}, {
-                onError: (error) => {
+          value={liveNavStatus?.status !== "DOCKED"}
+          onChange={() => switchDocked({navStatus: liveNavStatus?.status}, {
+                onError: (error: any) => {
                 toast(error.toString());
               },
-              onSuccess: (data) => {
+              onSuccess: (data: any) => {
                 toast(`Successfully fetched query for data ${JSON.stringify(data)}`);
               }}
           )}
         />
-        {ship.nav.status} at {ship.nav.route.destination.symbol} ({ship.nav.route.destination.x}, {ship.nav.route.destination.y})
+        {liveNavStatus?.status} at {liveNavStatus?.route.destination.symbol} ({liveNavStatus?.route.destination.x}, {liveNavStatus?.route.destination.y})
       </div>
       <div>
         Navigation: <progress value={computeRemainingCooldownFraction(ship.cooldown)} />
@@ -131,7 +117,8 @@ function ShipCard(props: {ship: Ship}) {
 }
 
 function ShipList() {
-  const shipList = useContext(ShipContext);
+  const { data } = useMyShips();
+  const shipList = data?.data || [];
   return (
     <>
       <Typography variant="h2">Ship List!</Typography>
