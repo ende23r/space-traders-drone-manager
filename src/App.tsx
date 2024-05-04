@@ -3,7 +3,7 @@ import Grid from '@mui/material/Unstable_Grid2'; // Grid version 2
 import GameContextProvider from './GameContextProvider';
 import ShipList from './ShipList';
 import NavList from './NavList';
-import { Box, Tab, Tabs } from '@mui/material';
+import { Box, Tab, Tabs, Card, CardHeader, CardContent, CardActions, Typography } from '@mui/material';
 import { useState } from 'react';
 import ShipyardList from './ShipyardList';
 import ContractCard from './ContractList';
@@ -71,6 +71,30 @@ function InfoTabs() {
   )
 }
 
+function AgentCard() {
+  const {data} = useMyAgent();
+  const myAgent = data.data;
+  if (!myAgent.symbol) {
+    return (
+    <Card variant="outlined">
+      <CardHeader title={"No Agent Selected"} />
+      <CardContent>Create a new agent or register an existing bearer token.</CardContent>
+    </Card>
+);
+  }
+  return (
+    <Card variant="outlined">
+      <CardHeader title={`Agent ${myAgent.symbol}`} subheader={`Money: ${myAgent.credits}`} />
+      <CardContent>
+        <Typography>Headquarters:{myAgent.headquarters}</Typography>
+        <Typography>Starting Faction:{myAgent.startingFaction}</Typography>
+        <Typography>Number of Ships:{myAgent.shipCount}</Typography>
+      </CardContent>
+      <CardActions>
+      </CardActions>
+    </Card>);
+}
+
 function App() {
   return (
     <>
@@ -90,6 +114,9 @@ function App() {
         <GameContextProvider>
           <div>
             <Grid container spacing={1}>
+              <Grid xs={12}>
+                <AgentCard />
+              </Grid>
               <Grid xs={12} md={6}>
                 <div>
                   <ShipList />

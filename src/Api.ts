@@ -52,8 +52,17 @@ import { api, schemas } from './packages/SpaceTradersAPI';
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import { getSystemSymbol } from "./Util";
 
+type Agent = z.infer<typeof schemas.Agent>;
 type Ship = z.infer<typeof schemas.Ship>;
 type Meta = z.infer<typeof schemas.Meta>;
+
+const noDataAgent: Agent = {
+  symbol: "",
+  headquarters: "",
+  credits: 0,
+  startingFaction: "",
+  shipCount: 0,
+}
 
 const noDataMeta: Meta = {
   total: 0,
@@ -97,6 +106,7 @@ export function useMyAgent() {
   return useQuery({
     queryKey: ["get-my-agent"],
     queryFn: () => api["get-my-agent"](bearerOptions(bearerToken)),
+    initialData: {data: noDataAgent},
     enabled: !!bearerToken,
     retry: false
   })  

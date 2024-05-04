@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Button, Card, CardActions, CardContent, CardHeader, MenuItem,  Select, Switch, Typography } from '@mui/material';
 import { api, schemas } from './packages/SpaceTradersAPI';
-import { globalQueryClient, useHQLocations, useMyShips, useShipNav, useSwitchDockingMutation } from './Api';
+import { globalQueryClient, useHQLocations, useMyShips, useSwitchDockingMutation } from './Api';
 import { z } from "zod";
 import { toast } from 'react-toastify';
 import { useLocalStorage } from './hooks/useLocalStorage';
