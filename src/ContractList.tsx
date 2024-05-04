@@ -5,21 +5,6 @@ import { useAcceptContractMutation, useContracts, useMyAgent, useMyShips, useNeg
 
 type Contract = z.infer<typeof schemas.Contract>;
 
-/*
-async function acceptContract(bearerToken: string, contractId: string) {
-  const options = {
-    headers: {
-      Authorization: `Bearer ${bearerToken}`
-    },
-    params: {
-      contractId
-    }
-  };
-  const result = api["accept-contract"](undefined, options);
-  return result;
-}
-*/
-
 const noContractSymbol = "NO_CONTRACT";
 const nullContract: Contract = {
   type: "PROCUREMENT",
@@ -49,12 +34,16 @@ function ContractCard() {
   const {mutate: triggerAcceptContract} = useAcceptContractMutation(contract.id);
   const {mutate: triggerNegotiateContract} = useNegotiateContractMutation();
   return <Card>
-      <CardHeader title={`${contract.type}: Deliver to ${contract.terms.deliver?.[0].destinationSymbol}`} subheader={contract.id} />
+      <CardHeader title={`${contract.type}: Deliver goods to ${contract.terms.deliver?.[0].destinationSymbol}`} subheader={`ID: ${contract.id}`} />
       <CardContent>
+        <Typography>Goods Requested</Typography>
         <Typography>
           {contract.terms.deliver?.map((term) => `${term.tradeSymbol}: ${term.unitsFulfilled}/${term.unitsRequired}`)}
         </Typography>
-      <Typography>Deadline to accept: {contract.deadlineToAccept}</Typography>
+        <Typography>
+        Payment On Acceptance: {contract.terms.payment.onAccepted} On Completion: {contract.terms.payment.onFulfilled}
+        </Typography>
+        <Typography>{!contract.accepted ? `Deadline to accept: ${contract.deadlineToAccept}` : "Accepted!"}</Typography>
       </CardContent>
     <CardActions>
       <Button
@@ -63,6 +52,8 @@ function ContractCard() {
         >
         Accept
       </Button>
+      <Button disabled={true}>Decline</Button>
+      <Button disabled={true}>Cancel Active Contract</Button>
       <Button
         onClick={() => triggerNegotiateContract({shipSymbol: shipAtHQ?.symbol || ""})}
         disabled={!shipAtHQ}

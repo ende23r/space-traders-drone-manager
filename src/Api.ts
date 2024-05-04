@@ -261,7 +261,7 @@ export const globalQueryClient = new QueryClient({
       toast(error.toString());
     },
     onSuccess: (_data, query) => {
-      toast(`Successfully fetched query for key ${query.queryKey.slice(1)}`);
+      toast(`Successfully fetched query for key ${query.queryKey}`);
     }
   })
 });
