@@ -12,10 +12,6 @@ async function checkBearerToken(token: string) {
 */
 // API for requests with a BODY: function [alias](body: BodyParam, config?: ZodiosRequestOptions): Promise<Response>;
 
-import { useQuery , QueryCache, QueryClient, useMutation } from "@tanstack/react-query"
-import { toast } from 'react-toastify';
-import { z } from "zod";
-import { api, schemas } from './packages/SpaceTradersAPI';
 
 // We want to guarantee the following for every new API method:
 // 1. It has access to the bearer token (provided by Bearer context)
@@ -49,8 +45,21 @@ import { api, schemas } from './packages/SpaceTradersAPI';
 // - nav locations
 // - nav traits
 // - contract
+import { useQuery , QueryCache, QueryClient, useMutation } from "@tanstack/react-query"
+import { toast } from 'react-toastify';
+import { z } from "zod";
+import { api, schemas } from './packages/SpaceTradersAPI';
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import { getSystemSymbol } from "./Util";
+
+type Ship = z.infer<typeof schemas.Ship>;
+type Meta = z.infer<typeof schemas.Meta>;
+
+const noDataMeta: Meta = {
+  total: 0,
+  page: 1,
+  limit: 10
+};
 
 export function useBearerToken() {
   return useLocalStorage("bearerToken", "");
@@ -96,7 +105,7 @@ export function useMyAgent() {
 export function useContracts() {
   const [bearerToken] = useLocalStorage("bearerToken", "");
   return useQuery({
-    queryKey: [ "get-contracts"],
+    queryKey: ["get-contracts"],
     queryFn: () => api["get-contracts"](bearerOptions(bearerToken)),
     // initialData: () => [] as any[],
     enabled: !!bearerToken,
@@ -109,10 +118,10 @@ export function useMyShips() {
   return useQuery({
     queryKey: [ "get-my-ships"],
     queryFn: () => api["get-my-ships"](bearerOptions(bearerToken)),
-    // initialData: () => [] as any[],
+    initialData: {data: [] as Ship[], meta: noDataMeta},
     enabled: !!bearerToken,
     retry: false
-  })
+  });
 }
 
 async function queryNavigationInfo(system: string) {
@@ -189,6 +198,47 @@ export function useSwitchDockingMutation(shipSymbol: string) {
     mutationFn: ({navStatus}: any) => switchDockedStatus(bearerToken, shipSymbol, navStatus),
   })
 }
+
+async function acceptContract(bearerToken: string, contractId: string) {
+  const options = {
+    headers: bearerPostHeaders(bearerToken),
+    params: {
+      contractId
+    }
+  };
+  const result = api["accept-contract"](undefined, options);
+  globalQueryClient.invalidateQueries({queryKey: ["get-contracts"]});
+  return result;
+}
+
+export function useAcceptContractMutation(contractId: string) {
+  const [bearerToken] = useLocalStorage("bearerToken", "");
+  return useMutation({
+    mutationKey: ["accept-contract"],
+    mutationFn: () => acceptContract(bearerToken, contractId),
+  })
+}
+
+async function negotiateContract(bearerToken: string, shipSymbol: string) {
+  const options = {
+    headers: bearerPostHeaders(bearerToken),
+    params: { shipSymbol },
+  };
+  const result = api["negotiateContract"](undefined, options);
+  globalQueryClient.invalidateQueries({queryKey: ["get-contracts"]});
+  return result;
+}
+
+export function useNegotiateContractMutation() {
+  const [bearerToken] = useLocalStorage("bearerToken", "");
+  return useMutation({
+    mutationKey: ["negotiateContract"],
+    mutationFn: ({shipSymbol}: {shipSymbol: string}) => negotiateContract(bearerToken, shipSymbol),
+  })
+}
+// Other contract functions:
+// Deliver, fulfill
+
 /* Shipyards
   useEffect(() => {
     const queryShipyard = async() => {

@@ -59,9 +59,6 @@ function ShipCard(props: {ship: Ship}) {
   const {data: locationsData} = useHQLocations();
   const navLocations = locationsData || [{symbol: ship.nav.waypointSymbol}];
 
-  const {data} = useShipNav(ship.symbol)
-  const liveNavStatus = data?.data;
-
   const [destination, setDestination] = useState<string>(ship.nav.waypointSymbol)
   const [cooldown, toggleCooldown] = useState(false)
 
@@ -75,18 +72,18 @@ function ShipCard(props: {ship: Ship}) {
       <div>Cargo: {ship.cargo.units}/{ship.cargo.capacity}</div>
       <div>
         <Switch
-          checked={liveNavStatus?.status !== "DOCKED"}
-          onChange={() => switchDocked({navStatus: liveNavStatus?.status}, {
+          checked={ship.nav.status !== "DOCKED"}
+          onChange={() => switchDocked({navStatus: ship.nav.status}, {
                 onError: (error: any) => {
                 toast(error.toString());
               },
               onSuccess: (data: any) => {
-                globalQueryClient.invalidateQueries({queryKey: ["get-ship-nav", ship.symbol]});
-                toast(`Successfully fetched query for data ${JSON.stringify(data)}`);
+                globalQueryClient.invalidateQueries({queryKey: ["get-my-ships"]});
+                toast(`Successfully sent mutation with data ${JSON.stringify(data)}`);
               }}
           )}
         />
-        {liveNavStatus?.status} at {liveNavStatus?.route.destination.symbol} ({liveNavStatus?.route.destination.x}, {liveNavStatus?.route.destination.y})
+        {ship.nav.status} at {ship.nav.route.destination.symbol} ({ship.nav.route.destination.x}, {ship.nav.route.destination.y})
       </div>
       <div>
         Navigation: <progress value={computeRemainingCooldownFraction(ship.cooldown)} />
