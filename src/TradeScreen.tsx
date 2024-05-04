@@ -1,5 +1,5 @@
 import { Select, MenuItem, Typography, Paper, Container, Button, TextField } from "@mui/material";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getSystemSymbol } from "./Util";
 import { api, schemas } from "./packages/SpaceTradersAPI";
 import { z } from "zod";
