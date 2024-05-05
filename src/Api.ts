@@ -55,6 +55,7 @@ import { getSystemSymbol } from "./Util";
 type Agent = z.infer<typeof schemas.Agent>;
 type Ship = z.infer<typeof schemas.Ship>;
 type Meta = z.infer<typeof schemas.Meta>;
+// type Waypoint = z.infer<typeof schemas.Waypoint>;
 
 const noDataAgent: Agent = {
   symbol: "",
@@ -135,6 +136,7 @@ export function useMyShips() {
 }
 
 async function queryNavigationInfo(system: string) {
+  if (!system) { return [] }
   const response = await api["get-system-waypoints"]({params: {systemSymbol: system}});
   const {total, limit} = response.meta;
   if (total <= limit) {
@@ -153,8 +155,9 @@ async function queryNavigationInfo(system: string) {
 
 export function useLocations(systemSymbol: string) {
   return useQuery({
-    queryKey: ["get-locations", systemSymbol],
+    queryKey: ["get-system-waypoints", systemSymbol],
     queryFn: () => queryNavigationInfo(systemSymbol),
+    // initialData: {data: [] as Waypoint[], meta: noDataMeta},
     enabled: !!systemSymbol,
     retry: false
   })

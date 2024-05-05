@@ -1,14 +1,14 @@
-import { Select, MenuItem, Typography, Paper, Container, Button, TextField } from "@mui/material";
-import { useEffect, useRef, useState } from "react";
+import { Select, MenuItem, Typography, Paper, Container } from "@mui/material";
+import { useEffect, useState } from "react";
 import { getSystemSymbol } from "./Util";
 import { api, schemas } from "./packages/SpaceTradersAPI";
 import { z } from "zod";
 import { useLocalStorage } from "./hooks/useLocalStorage";
-import { useMyShips } from "./Api";
+import { useLocations, useMyAgent } from "./Api";
 
 type Market = z.infer<typeof schemas.Market>;
-type MarketTradeGood = z.infer<typeof schemas.MarketTradeGood>;
-type TradeSymbol = z.infer<typeof schemas.TradeSymbol>;
+// type MarketTradeGood = z.infer<typeof schemas.MarketTradeGood>;
+// type TradeSymbol = z.infer<typeof schemas.TradeSymbol>;
 
 async function getMarketDetails(bearerToken: string, waypointSymbol: string) {
   const options = {
@@ -24,6 +24,7 @@ async function getMarketDetails(bearerToken: string, waypointSymbol: string) {
   return response.data;
 }
 
+/*
 async function buyGood(bearerToken: string, shipSymbol: string, tradeSymbol: TradeSymbol, units: number) {
   const body = {
     symbol: tradeSymbol,  units
@@ -55,7 +56,9 @@ async function sellGood(bearerToken: string, shipSymbol: string, tradeSymbol: Tr
   const response = await api["sell-cargo"](body, options)
   return response;
 }
+*/
 
+/*
 function TradeGood(props: {tradeGood: MarketTradeGood, shipSymbol: string}) {
   const { tradeGood, shipSymbol } = props;
   const [bearerToken] = useLocalStorage("bearerToken", "");
@@ -102,10 +105,10 @@ function TradeGood(props: {tradeGood: MarketTradeGood, shipSymbol: string}) {
       }}
     />
     </Container>;  
-}
+}*/
 
-function Market(props: {waypointSymbol: string, shipSymbol: string}) {
-  const { waypointSymbol, shipSymbol } = props;
+function Market(props: {waypointSymbol: string }) {
+  const { waypointSymbol} = props;
   const [bearerToken] = useLocalStorage("bearerToken", "");
 
   const [marketData, setMarketData] = useState<Market>();
@@ -128,7 +131,8 @@ function Market(props: {waypointSymbol: string, shipSymbol: string}) {
     tradeGoodsContainer = (
       <Container>
         <Typography variant="h4">TradeGoods</Typography>
-        {marketData.tradeGoods.map((tradeGood) => <TradeGood tradeGood={tradeGood} shipSymbol={shipSymbol} />)}
+        {JSON.stringify(marketData.tradeGoods)}
+        {/*marketData.tradeGoods.map((tradeGood) => <TradeGood tradeGood={tradeGood} shipSymbol={shipSymbol} />)*/}
       </Container>
     )
   }
@@ -138,24 +142,29 @@ function Market(props: {waypointSymbol: string, shipSymbol: string}) {
     <Container>
       <Typography variant="h4">Imports</Typography>
       {marketData.imports.map((impor) => impor.symbol)}
+      <Typography variant="h4">Exports</Typography>
+      {marketData.exports.map((expor) => expor.symbol)}
     </Container>
     {tradeGoodsContainer}
     </Paper>
 }
 
 function TradeScreen() {
-  const {data: shipData} = useMyShips();
-  const shipList = shipData?.data || [];
-  const shipSymbols = shipList.map((ship) => ship.symbol);
+  // const {data: shipData} = useMyShips();
+  // const shipList = shipData?.data || [];
+  const {data: agentData} = useMyAgent();
+  const systemSymbol = getSystemSymbol(agentData.data.headquarters);
+  const {data: navData} = useLocations(systemSymbol);
+  const marketLocations = navData?.filter((navLoc) => navLoc.traits.map((trait) => trait.symbol).includes("MARKETPLACE")) || []
+  console.log({navData, marketLocations})
 
-  const [activeShip, setActiveShip] = useState(shipSymbols[0] || "")
-  const activeShipData = shipList.find((ship) => ship.symbol === activeShip);
+  const [marketSymbol, setMarketSymbol] = useState(marketLocations[0]?.symbol || "");
 
   return <>
-    <Select label="Active Ship" value={activeShip} onChange={(event) => setActiveShip(event.target.value)}>
-      {shipSymbols.map((symbol) => <MenuItem value={symbol}>{symbol}</MenuItem>)}
+    <Select label="Selected Marketplace" value={marketSymbol} onChange={(event) => setMarketSymbol(event.target.value)}>
+      {marketLocations.map((navLoc) => <MenuItem value={navLoc.symbol}>{navLoc.symbol}</MenuItem>)}
     </Select>
-    <Market waypointSymbol={activeShipData?.nav.waypointSymbol || ""} shipSymbol={activeShip} />
+    <Market waypointSymbol={marketSymbol} />
   </>
 }
 
