@@ -7,6 +7,8 @@ import { toast } from 'react-toastify';
 import { useLocalStorage } from './hooks/useLocalStorage';
 
 type Ship = z.infer<typeof schemas.Ship>;
+type ShipNav = z.infer<typeof schemas.ShipNav>;
+type Waypoint = z.infer<typeof schemas.Waypoint>;
 
 function computeRemainingCooldownFraction(cooldown: any) {
   return (cooldown.totalSeconds - cooldown.remainingSeconds + 0.01) / (cooldown.totalSeconds + 0.01);
@@ -52,17 +54,27 @@ async function fuelShip(bearerToken: string, shipSymbol: string) {
   return response.data;
 }
 
+function computeDistance(shipNav: ShipNav, destinationNav: Waypoint) {
+  const originNav = shipNav.route.origin;
+  const distance = Math.sqrt(Math.pow(destinationNav.x - originNav.x, 2) + Math.pow(destinationNav.y - originNav.y, 2));
+  return distance;  
+}
+
 function ShipCard(props: {ship: Ship}) {
   const {ship} = props;
 
   const [bearerToken] = useLocalStorage("bearerToken", "");
   const {data: locationsData} = useHQLocations();
-  const navLocations = locationsData || [{symbol: ship.nav.waypointSymbol}];
+  const navLocations = locationsData || [];
 
   const [destination, setDestination] = useState<string>(ship.nav.waypointSymbol)
   const [cooldown, toggleCooldown] = useState(false)
 
   const {mutate: switchDocked} = useSwitchDockingMutation(ship.symbol);
+
+  const destinationNav = navLocations.find((loc) => loc.symbol === destination) || null;
+  const distanceIndicator = destinationNav ?
+   <Typography>Distance to Target: {computeDistance(ship.nav, destinationNav)} units.</Typography> : null
   
   return (
     <Card variant="outlined">
@@ -88,8 +100,9 @@ function ShipCard(props: {ship: Ship}) {
       <div>
         Navigation: <progress value={computeRemainingCooldownFraction(ship.cooldown)} />
         <Select label="Destination" value={destination} onChange={(event) => setDestination(event.target.value)}>
-          {navLocations.map((nav) => <MenuItem value={nav.symbol}>{nav.symbol}</MenuItem>)}
+          {navLocations.map((nav) => <MenuItem value={nav.symbol}>{nav.symbol} ({nav.x}, {nav.y})</MenuItem>)}
         </Select>
+          {distanceIndicator}
       </div>
       <div>Cooldown: <progress value={computeRemainingCooldownFraction(ship.cooldown)} /> </div>
       </CardContent>
