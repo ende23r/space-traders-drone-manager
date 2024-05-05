@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Button, Card, CardActions, CardContent, CardHeader, MenuItem,  Select, Switch, Typography } from '@mui/material';
 import { api, schemas } from './packages/SpaceTradersAPI';
-import { globalQueryClient, useHQLocations, useMyShips, useSwitchDockingMutation } from './Api';
+import { globalQueryClient, useHQLocations, useMyShips, useNavigateMutation, useSwitchDockingMutation } from './Api';
 import { z } from "zod";
 import { toast } from 'react-toastify';
 import { useLocalStorage } from './hooks/useLocalStorage';
@@ -12,20 +12,6 @@ type Waypoint = z.infer<typeof schemas.Waypoint>;
 
 function computeRemainingCooldownFraction(cooldown: any) {
   return (cooldown.totalSeconds - cooldown.remainingSeconds + 0.01) / (cooldown.totalSeconds + 0.01);
-}
-
-async function triggerNavigation(bearerToken: string, shipSymbol: string, destinationWaypoint: string) {
-  const body = {waypointSymbol: destinationWaypoint}
-  const options = {
-    headers: {
-      Authorization: `Bearer ${bearerToken}`
-    },
-    params: {
-      shipSymbol
-    }
-  };
-  const response = await api["navigate-ship"](body, options);
-  return response.data;
 }
 
 async function extract(bearerToken: string, shipSymbol: string) {
@@ -71,6 +57,7 @@ function ShipCard(props: {ship: Ship}) {
   const [cooldown, toggleCooldown] = useState(false)
 
   const {mutate: switchDocked} = useSwitchDockingMutation(ship.symbol);
+  const {mutate: triggerNavigation} = useNavigateMutation(ship.symbol);
 
   const destinationNav = navLocations.find((loc) => loc.symbol === destination) || null;
   const distanceIndicator = destinationNav ?
@@ -107,7 +94,7 @@ function ShipCard(props: {ship: Ship}) {
       <div>Cooldown: <progress value={computeRemainingCooldownFraction(ship.cooldown)} /> </div>
       </CardContent>
       <CardActions>
-        <Button variant="contained" onClick={() => triggerNavigation(bearerToken, ship.symbol, destination)}>
+        <Button variant="contained" onClick={() => triggerNavigation({destinationWaypointSymbol: destination})}>
           Punch It!
         </Button>
         <Button

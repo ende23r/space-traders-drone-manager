@@ -268,6 +268,26 @@ export function useNegotiateContractMutation() {
   }, [shipyardSelected])
 */
 
+async function triggerNavigation(bearerToken: string, shipSymbol: string, waypointSymbol: string) {
+  const body = {waypointSymbol}
+  const options = {
+    headers: bearerPostHeaders(bearerToken),
+    params: {
+      shipSymbol
+    }
+  };
+  const response = await api["navigate-ship"](body, options);
+  globalQueryClient.invalidateQueries({queryKey: ["get-my-ships"]});
+  return response.data;
+}
+export function useNavigateMutation(shipSymbol: string) {
+  const [bearerToken] = useLocalStorage("bearerToken", "");
+  return useMutation({
+    mutationKey: ["navigate-ship", shipSymbol],
+    mutationFn: ({destinationWaypointSymbol}: {destinationWaypointSymbol: string}) => triggerNavigation(bearerToken, shipSymbol, destinationWaypointSymbol),
+  })
+}
+
 export const globalQueryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error) => {
