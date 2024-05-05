@@ -159,7 +159,9 @@ export function useLocations(systemSymbol: string) {
     queryFn: () => queryNavigationInfo(systemSymbol),
     // initialData: {data: [] as Waypoint[], meta: noDataMeta},
     enabled: !!systemSymbol,
-    retry: false
+    retry: false,
+    // Make this function never re-fetch
+    staleTime: Infinity
   })
 }
 
