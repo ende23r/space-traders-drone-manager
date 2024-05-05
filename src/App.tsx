@@ -1,9 +1,8 @@
 import Grid from '@mui/material/Unstable_Grid2'; // Grid version 2
 
-import GameContextProvider from './GameContextProvider';
 import ShipList from './ShipList';
 import NavList from './NavList';
-import { Box, Tab, Tabs, Card, CardHeader, CardContent, CardActions, Typography } from '@mui/material';
+import { Box, Button, Tab, Tabs, Card, CardHeader, CardContent, CardActions, Typography } from '@mui/material';
 import { useState } from 'react';
 import ShipyardList from './ShipyardList';
 import ContractCard from './ContractList';
@@ -15,6 +14,7 @@ import { globalQueryClient, useMyAgent } from './Api';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { getSystemSymbol } from './Util';
+import BearerAuthDialog from './BearerAuthDialog';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -96,6 +96,8 @@ function AgentCard() {
 }
 
 function App() {
+  const [authDialogOpen, setAuthDialogOpen] = useState(false);
+  
   return (
     <>
       <ToastContainer
@@ -111,11 +113,16 @@ function App() {
         theme="light"
         />
         <QueryClientProvider client={globalQueryClient}>
-        <GameContextProvider>
+        <BearerAuthDialog manuallyOpen={authDialogOpen} setManuallyOpen={(open) => setAuthDialogOpen(open)} />
           <div>
             <Grid container spacing={1}>
-              <Grid xs={12}>
+              <Grid xs={10}>
                 <AgentCard />
+              </Grid>
+              <Grid xs={2}>
+                <Button
+                  onClick={() => setAuthDialogOpen(true)}
+                  >Change login</Button>
               </Grid>
               <Grid xs={12} md={6}>
                 <div>
@@ -127,7 +134,6 @@ function App() {
               </Grid>
             </Grid>
           </div>
-        </GameContextProvider>
         <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   </>

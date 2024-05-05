@@ -1,11 +1,11 @@
-import { Button, TextField } from "@mui/material";
+import { Button, Dialog, DialogTitle, DialogContent, TextField, DialogActions } from "@mui/material";
 import { useState } from "react"
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import { useMyAgent } from "./Api";
 
 // API for requests with a BODY: function [alias](body: BodyParam, config?: ZodiosRequestOptions): Promise<Response>;
 
-async function generateBearerToken(playerSymbol: string) {
+async function generateBearerToken(playerSymbol: string, faction = "COSMIC") {
   const options = {
     method: "POST",
     headers: {
@@ -13,22 +13,28 @@ async function generateBearerToken(playerSymbol: string) {
     },
     body: JSON.stringify({
       "symbol": playerSymbol,
-      "faction": "COSMIC"
+      faction,
     })
   };
   const response = await fetch("https://api.spacetraders.io/v2/register", options);
-  console.log(response);
   if (!response.ok) {
     throw new Error(`${response.status}: ${response.statusText}`);
   }
   return await response.json();
 }
 
-function BearerAuthSetup(props: {defaultAgentSymbol: string}) {
-  const { defaultAgentSymbol } = props;
+function BearerAuthDialog(props: {manuallyOpen: boolean, setManuallyOpen: (a: boolean) => void}) {
+  const {manuallyOpen, setManuallyOpen} = props;
+  const {data: agentData } = useMyAgent();  
+  const defaultAgentSymbol = agentData.data.symbol;
   const [bearerToken, setBearerToken] = useLocalStorage("bearerToken", "");
   const [agentSymbol, setAgentSymbol] = useState("");
-    return (<><div>
+    return (
+    <Dialog
+      open={!bearerToken || manuallyOpen}>
+      <DialogTitle>Register Agent</DialogTitle>
+      <DialogContent>
+    <div>
       <TextField
         id="outlined-multiline-static"
         label="Bearer Token"
@@ -37,7 +43,7 @@ function BearerAuthSetup(props: {defaultAgentSymbol: string}) {
         value={bearerToken}
         onChange={(e) => setBearerToken(e.target.value)}
       />
-        <Button variant="contained" onClick={() => setBearerToken(bearerToken)}>Register Bearer Token</Button>
+        <Button variant="contained" onClick={() => setBearerToken(bearerToken)}>Use Existing Bearer Token</Button>
     </div>
     <div>
       <TextField
@@ -50,27 +56,13 @@ function BearerAuthSetup(props: {defaultAgentSymbol: string}) {
           const data = await generateBearerToken(agentSymbol);
         const { token } = data.data;
         setBearerToken(token);
-        }}>Register New Agent</Button>
+        }}>Create New Agent</Button>
     </div>
-    </>)
+    </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setManuallyOpen(false)}>Close</Button>
+    </DialogActions>
+    </Dialog>)
 }
 
-function GameContextProvider(props: {  children: any}) {
-  const { children } = props;
-
-  const {data: agentData } = useMyAgent();  
-  /*
-  let homeSystem = ""
-  if (agentStatus === "success") {
-    homeSystem = getSystemSymbol(agentData.data.headquarters);
-  }
-  */
-
-  return (
-  <>
-    <BearerAuthSetup defaultAgentSymbol={agentData?.data.symbol || ""} />
-    {children}
-  </>);
-}
-
-export default GameContextProvider;
+export default BearerAuthDialog;
