@@ -39,12 +39,12 @@ function ContractCard() {
   const { data } = useContracts();
   const contract: Contract = data?.data[0] || nullContract;
 
-  const { data: agentData } = useMyAgent();
+  const { agent } = useMyAgent();
   const { data: shipData } = useMyShips();
-  const shipList = shipData.data;
+  const shipList = shipData?.data || [];
   const shipAtHQ = shipList.find(
     (ship) =>
-      ship.nav.waypointSymbol === agentData?.data.headquarters &&
+      ship.nav.waypointSymbol === agent.headquarters &&
       ship.nav.status === "DOCKED",
   );
 

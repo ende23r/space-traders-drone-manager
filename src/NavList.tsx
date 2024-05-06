@@ -24,8 +24,8 @@ function NavCard(props: any) {
 }
 
 function NavList() {
-  const { data: agentData } = useMyAgent();
-  const homeSystem = getSystemSymbol(agentData?.data?.headquarters || "");
+  const { agent } = useMyAgent();
+  const homeSystem = getSystemSymbol(agent.headquarters);
 
   const { data } = useLocations(homeSystem);
   const navLocations = data || [];

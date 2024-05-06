@@ -38,8 +38,8 @@ function BearerAuthDialog(props: {
   setManuallyOpen: (a: boolean) => void;
 }) {
   const { manuallyOpen, setManuallyOpen } = props;
-  const { data: agentData } = useMyAgent();
-  const defaultAgentSymbol = agentData.data.symbol;
+  const { agent } = useMyAgent();
+  const defaultAgentSymbol = agent.symbol || "";
   const [bearerToken, setBearerToken] = useLocalStorage("bearerToken", "");
   const [agentSymbol, setAgentSymbol] = useState("");
   return (

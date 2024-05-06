@@ -49,8 +49,8 @@ function CustomTabPanel(props: TabPanelProps) {
 }
 
 function InfoTabs() {
-  const { data } = useMyAgent();
-  const systemSymbol = getSystemSymbol(data?.data.headquarters || "");
+  const { agent } = useMyAgent();
+  const systemSymbol = getSystemSymbol(agent.headquarters);
 
   const [tabIndex, setTabIndex] = useState(0);
   return (
@@ -78,8 +78,7 @@ function InfoTabs() {
 }
 
 function AgentCard() {
-  const { data } = useMyAgent();
-  const myAgent = data.data;
+  const { agent: myAgent } = useMyAgent();
   if (!myAgent.symbol) {
     return (
       <Card variant="outlined">

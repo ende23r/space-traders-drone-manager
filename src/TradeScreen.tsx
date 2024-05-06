@@ -158,14 +158,13 @@ function Market(props: { waypointSymbol: string }) {
 function TradeScreen() {
   // const {data: shipData} = useMyShips();
   // const shipList = shipData?.data || [];
-  const { data: agentData } = useMyAgent();
-  const systemSymbol = getSystemSymbol(agentData.data.headquarters);
+  const { agent } = useMyAgent();
+  const systemSymbol = getSystemSymbol(agent.headquarters || "");
   const { data: navData } = useLocations(systemSymbol);
   const marketLocations =
     navData?.filter((navLoc) =>
       navLoc.traits.map((trait) => trait.symbol).includes("MARKETPLACE"),
     ) || [];
-  console.log({ navData, marketLocations });
 
   const [marketSymbol, setMarketSymbol] = useState(
     marketLocations[0]?.symbol || "",

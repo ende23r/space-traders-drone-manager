@@ -57,8 +57,8 @@ import { useLocalStorage } from "./hooks/useLocalStorage";
 import { getSystemSymbol } from "./Util";
 
 type Agent = z.infer<typeof schemas.Agent>;
-type Ship = z.infer<typeof schemas.Ship>;
-type Meta = z.infer<typeof schemas.Meta>;
+// type Ship = z.infer<typeof schemas.Ship>;
+// type Meta = z.infer<typeof schemas.Meta>;
 // type Waypoint = z.infer<typeof schemas.Waypoint>;
 
 const noDataAgent: Agent = {
@@ -69,11 +69,13 @@ const noDataAgent: Agent = {
   shipCount: 0,
 };
 
-const noDataMeta: Meta = {
+/*
+const _noDataMeta: Meta = {
   total: 0,
   page: 1,
   limit: 10,
 };
+*/
 
 export function useBearerToken() {
   return useLocalStorage("bearerToken", "");
@@ -108,13 +110,13 @@ export const bearerPostHeaders = (token: string) => {
 
 export function useMyAgent() {
   const [bearerToken] = useLocalStorage("bearerToken", "");
-  return useQuery({
+  const { data, ...metadata } = useQuery({
     queryKey: ["get-my-agent"],
     queryFn: () => api["get-my-agent"](bearerOptions(bearerToken)),
-    initialData: { data: noDataAgent },
     enabled: !!bearerToken,
     retry: false,
   });
+  return { agent: data?.data || noDataAgent, ...metadata };
 }
 
 export function useContracts() {
@@ -122,7 +124,6 @@ export function useContracts() {
   return useQuery({
     queryKey: ["get-contracts"],
     queryFn: () => api["get-contracts"](bearerOptions(bearerToken)),
-    // initialData: () => [] as any[],
     enabled: !!bearerToken,
     retry: false,
   });
@@ -133,9 +134,10 @@ export function useMyShips() {
   return useQuery({
     queryKey: ["get-my-ships"],
     queryFn: () => api["get-my-ships"](bearerOptions(bearerToken)),
-    initialData: { data: [] as Ship[], meta: noDataMeta },
     enabled: !!bearerToken,
     retry: false,
+    // Make this function never re-fetch
+    staleTime: Infinity,
   });
 }
 
@@ -168,7 +170,6 @@ export function useLocations(systemSymbol: string) {
   return useQuery({
     queryKey: ["get-system-waypoints", systemSymbol],
     queryFn: () => queryNavigationInfo(systemSymbol),
-    // initialData: {data: [] as Waypoint[], meta: noDataMeta},
     enabled: !!systemSymbol,
     retry: false,
     // Make this function never re-fetch
@@ -177,8 +178,8 @@ export function useLocations(systemSymbol: string) {
 }
 
 export function useHQLocations() {
-  const { data } = useMyAgent();
-  const systemSymbol = getSystemSymbol(data?.data.headquarters || "");
+  const { agent } = useMyAgent();
+  const systemSymbol = getSystemSymbol(agent.headquarters);
   return useQuery({
     queryKey: ["get-locations", systemSymbol],
     queryFn: () => queryNavigationInfo(systemSymbol),
@@ -196,7 +197,6 @@ export function useShipNav(shipSymbol: string) {
   return useQuery({
     queryKey: ["get-ship-nav", shipSymbol],
     queryFn: () => api["get-ship-nav"](options),
-    // initialData: () => [] as any[],
     enabled: !!bearerToken,
     retry: false,
   });
