@@ -10,9 +10,11 @@ import {
   Switch,
   Typography,
 } from "@mui/material";
-import { api, schemas } from "./packages/SpaceTradersAPI";
+import { schemas } from "./packages/SpaceTradersAPI";
 import {
   globalQueryClient,
+  useExtractMutation,
+  useFuelShipMutation,
   useHQLocations,
   useMyShips,
   useNavigateMutation,
@@ -20,7 +22,6 @@ import {
 } from "./Api";
 import { z } from "zod";
 import { toast } from "react-toastify";
-import { useLocalStorage } from "./hooks/useLocalStorage";
 
 type Ship = z.infer<typeof schemas.Ship>;
 type ShipNav = z.infer<typeof schemas.ShipNav>;
@@ -33,31 +34,6 @@ function computeRemainingCooldownFraction(cooldown: any) {
   );
 }
 
-async function extract(bearerToken: string, shipSymbol: string) {
-  const options = {
-    headers: {
-      Authorization: `Bearer ${bearerToken}`,
-    },
-    params: {
-      shipSymbol,
-    },
-  };
-  const response = await api["extract-resources"]({}, options);
-  return response.data;
-}
-
-async function fuelShip(bearerToken: string, shipSymbol: string) {
-  const options = {
-    headers: {
-      Authorization: `Bearer ${bearerToken}`,
-    },
-    params: {
-      shipSymbol,
-    },
-  };
-  const response = await api["refuel-ship"]({}, options);
-  return response.data;
-}
 
 function computeDistance(shipNav: ShipNav, destinationNav: Waypoint) {
   const originNav = shipNav.route.destination;
@@ -68,21 +44,29 @@ function computeDistance(shipNav: ShipNav, destinationNav: Waypoint) {
   return distance;
 }
 
+const validMiningWaypointTypes = [
+  "ASTEROID", "ASTEROID_FIELD", "ENGINEERED_ASTEROID"
+]
+
 function ShipCard(props: { ship: Ship }) {
   const { ship } = props;
 
-  const [bearerToken] = useLocalStorage("bearerToken", "");
   const { data: locationsData } = useHQLocations();
   const navLocations = locationsData || [];
 
   const [destination, setDestination] = useState<string>(
     ship.nav.waypointSymbol,
   );
-  const [cooldown, toggleCooldown] = useState(false);
 
   const { mutate: switchDocked } = useSwitchDockingMutation(ship.symbol);
-  const { mutate: triggerNavigation } = useNavigateMutation(ship.symbol);
+  const { mutate: triggerNavigation, /*data: navigateMutationData */ } = useNavigateMutation(ship.symbol);
+  // console.log({ navigateMutationData })
+  // This has nav.route.arrivalTime so we could use that to schedule the next ship update
 
+  const { mutate: triggerExtract, /*data: extractData */ } = useExtractMutation(ship.symbol);
+  const { mutate: fuelShip } = useFuelShipMutation(ship.symbol);
+
+  const extractionDisabled = ship.nav.status !== "IN_ORBIT" || !validMiningWaypointTypes.includes(ship.nav.route.destination.type) || ship.cooldown.remainingSeconds > 0
   const destinationNav =
     navLocations.find((loc) => loc.symbol === destination) || null;
   const distanceIndicator = destinationNav ? (
@@ -153,26 +137,20 @@ function ShipCard(props: { ship: Ship }) {
       <CardActions>
         <Button
           variant="contained"
-          onClick={() =>
-            triggerNavigation({ destinationWaypointSymbol: destination })
+          onClick={() => triggerNavigation({ destinationWaypointSymbol: destination })
           }
         >
           Punch It!
         </Button>
         <Button
-          disabled={cooldown}
+          disabled={extractionDisabled}
           onClick={async () => {
-            const data = await extract(bearerToken, ship.symbol);
-            toggleCooldown(true);
-            setTimeout(
-              () => toggleCooldown(false),
-              data.cooldown.totalSeconds * 1000,
-            );
+            triggerExtract();
           }}
         >
           Extract
         </Button>
-        <Button onClick={() => fuelShip(bearerToken, ship.symbol)}>
+        <Button onClick={() => fuelShip()}>
           Fill 'er up!
         </Button>
       </CardActions>

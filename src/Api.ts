@@ -55,6 +55,7 @@ import { z } from "zod";
 import { api, schemas } from "./packages/SpaceTradersAPI";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import { getSystemSymbol } from "./Util";
+import { scheduleUpdate } from "./Scheduler";
 
 type Agent = z.infer<typeof schemas.Agent>;
 // type Ship = z.infer<typeof schemas.Ship>;
@@ -325,6 +326,52 @@ export function useNavigateMutation(shipSymbol: string) {
     }: {
       destinationWaypointSymbol: string;
     }) => triggerNavigation(bearerToken, shipSymbol, destinationWaypointSymbol),
+  });
+}
+
+async function triggerExtract(bearerToken: string, shipSymbol: string) {
+  const options = {
+    headers: bearerPostHeaders(bearerToken),
+    params: {
+      shipSymbol,
+    },
+  };
+  const response = await api["extract-resources"]({}, options);
+  globalQueryClient.invalidateQueries({ queryKey: ["get-my-ships"] });
+  console.log({ extractionData: response.data })
+  scheduleUpdate({
+    callback: () => globalQueryClient.invalidateQueries({ queryKey: ["get-my-ships"] }),
+    scheduledTime: new Date(response.data.cooldown.expiration || "")
+  })
+  return response.data;
+}
+
+export function useExtractMutation(shipSymbol: string) {
+  const [bearerToken] = useLocalStorage("bearerToken", "");
+  return useMutation({
+    mutationKey: ["extract-resources", shipSymbol],
+    mutationFn: () => triggerExtract(bearerToken, shipSymbol),
+  });
+}
+
+
+async function fuelShip(bearerToken: string, shipSymbol: string) {
+  const options = {
+    headers: bearerPostHeaders(bearerToken),
+    params: {
+      shipSymbol,
+    },
+  };
+  const response = await api["refuel-ship"]({}, options);
+  globalQueryClient.invalidateQueries({ queryKey: ["get-my-ships"] });
+  return response.data;
+}
+
+export function useFuelShipMutation(shipSymbol: string) {
+  const [bearerToken] = useLocalStorage("bearerToken", "");
+  return useMutation({
+    mutationKey: ["refuel-ship", shipSymbol],
+    mutationFn: () => fuelShip(bearerToken, shipSymbol),
   });
 }
 
