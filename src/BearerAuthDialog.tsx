@@ -8,7 +8,7 @@ import {
 } from "@mui/material";
 import { useState } from "react";
 import { useLocalStorage } from "./hooks/useLocalStorage";
-import { useMyAgent } from "./Api";
+import { useMyAgent, globalQueryClient } from "./Api";
 
 // API for requests with a BODY: function [alias](body: BodyParam, config?: ZodiosRequestOptions): Promise<Response>;
 
@@ -57,7 +57,10 @@ function BearerAuthDialog(props: {
           />
           <Button
             variant="contained"
-            onClick={() => setBearerToken(bearerToken)}
+            onClick={() => {
+              setBearerToken(bearerToken);
+              globalQueryClient.invalidateQueries();
+            }}
           >
             Use Existing Bearer Token
           </Button>
@@ -77,6 +80,7 @@ function BearerAuthDialog(props: {
               const data = await generateBearerToken(agentSymbol);
               const { token } = data.data;
               setBearerToken(token);
+              globalQueryClient.invalidateQueries();
             }}
           >
             Create New Agent
