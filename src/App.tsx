@@ -13,7 +13,7 @@ import {
   CardActions,
   Typography,
 } from "@mui/material";
-import { useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import ShipyardList from "./ShipyardList";
 import ContractCard from "./ContractList";
 import TradeScreen from "./TradeScreen";
@@ -26,6 +26,8 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { getSystemSymbol } from "./Util";
 import BearerAuthDialog from "./BearerAuthDialog";
 import { processUpdatesLoop } from "./Scheduler";
+
+const DateContext = createContext(new Date());
 
 // Kick off game loop
 processUpdatesLoop();
@@ -83,6 +85,8 @@ function InfoTabs() {
 
 function AgentCard() {
   const { agent: myAgent } = useMyAgent();
+  const date = useContext(DateContext);
+  console.log({ date })
   if (!myAgent.symbol) {
     return (
       <Card variant="outlined">
@@ -109,6 +113,17 @@ function AgentCard() {
   );
 }
 
+function DateContextWrapper(props: { children: any }) {
+  const [date, setDate] = useState<Date>(new Date());
+  useEffect(() => {
+    // Can use clearInterval to turn this off
+    setInterval(() => {
+      setDate(new Date())
+    }, 500)
+  }, [])
+  return <DateContext.Provider value={date}>{props.children}</DateContext.Provider>
+}
+
 function App() {
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
 
@@ -127,31 +142,33 @@ function App() {
         theme="light"
       />
       <QueryClientProvider client={globalQueryClient}>
-        <BearerAuthDialog
-          manuallyOpen={authDialogOpen}
-          setManuallyOpen={(open) => setAuthDialogOpen(open)}
-        />
-        <div>
-          <Grid container spacing={1}>
-            <Grid xs={10}>
-              <AgentCard />
+        <DateContextWrapper>
+          <BearerAuthDialog
+            manuallyOpen={authDialogOpen}
+            setManuallyOpen={(open) => setAuthDialogOpen(open)}
+          />
+          <div>
+            <Grid container spacing={1}>
+              <Grid xs={10}>
+                <AgentCard />
+              </Grid>
+              <Grid xs={2}>
+                <Button onClick={() => setAuthDialogOpen(true)}>
+                  Change login
+                </Button>
+              </Grid>
+              <Grid xs={12} md={6}>
+                <div>
+                  <ShipList />
+                </div>
+              </Grid>
+              <Grid xs={12} md={6}>
+                <InfoTabs />
+              </Grid>
             </Grid>
-            <Grid xs={2}>
-              <Button onClick={() => setAuthDialogOpen(true)}>
-                Change login
-              </Button>
-            </Grid>
-            <Grid xs={12} md={6}>
-              <div>
-                <ShipList />
-              </div>
-            </Grid>
-            <Grid xs={12} md={6}>
-              <InfoTabs />
-            </Grid>
-          </Grid>
-        </div>
-        <ReactQueryDevtools initialIsOpen={false} />
+          </div>
+          <ReactQueryDevtools initialIsOpen={false} />
+        </DateContextWrapper>
       </QueryClientProvider>
     </>
   );

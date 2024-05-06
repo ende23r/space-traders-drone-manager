@@ -29,10 +29,12 @@ export function processUpdatesLoop() {
     if (now < update.scheduledTime) { nextUpdates.push(update); console.log(`Re-queueing update until ${update.scheduledTime}`) }
     else { update.callback(); }
   }
+  /*
   console.log({
     curr: scheduledUpdates,
     next: nextUpdates
   })
+  */
   scheduledUpdates = nextUpdates;
   // Process updates every 1/2 of a second
   setTimeout(processUpdatesLoop, 500);
