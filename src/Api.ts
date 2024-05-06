@@ -108,6 +108,11 @@ export const bearerPostHeaders = (token: string) => {
   };
 };
 
+/**
+ * We only want to re-fetch this function when:
+ * 1. The player buys a ship
+ * 2. The player spends or earns money
+ */
 export function useMyAgent() {
   const [bearerToken] = useLocalStorage("bearerToken", "");
   const { data, ...metadata } = useQuery({
@@ -115,6 +120,8 @@ export function useMyAgent() {
     queryFn: () => api["get-my-agent"](bearerOptions(bearerToken)),
     enabled: !!bearerToken,
     retry: false,
+    // Make this function never re-fetch
+    staleTime: Infinity,
   });
   return { agent: data?.data || noDataAgent, ...metadata };
 }
@@ -129,6 +136,12 @@ export function useContracts() {
   });
 }
 
+/**
+ * Only want to refetch this function when:
+ * 1. The player buys a new ship
+ * 2. The player triggers a change in ship state
+ * 3. A scheduled ship update has likely happened (e.g. ship reached destination, cooldown done)
+ */
 export function useMyShips() {
   const [bearerToken] = useLocalStorage("bearerToken", "");
   return useQuery({

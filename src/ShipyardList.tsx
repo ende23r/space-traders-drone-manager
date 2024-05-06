@@ -10,6 +10,7 @@ type Shipyard = z.infer<typeof schemas.Shipyard>;
 type ShipyardShip = z.infer<typeof schemas.ShipyardShip>;
 type ShipType = z.infer<typeof schemas.ShipType>;
 
+// TODO: make this invalidate state of agents and ships
 async function purchaseShip(
   bearerToken: string,
   shipType: ShipType,
@@ -62,8 +63,8 @@ function ShipSaleList(props: { data: Shipyard | undefined }) {
       {/*<Typography>{data.shipTypes.map((shipType) => shipType.type)}</Typography>*/}
       {data.ships
         ? data.ships.map((ship) => (
-            <ShipPurchaseOption data={ship} waypointSymbol={data.symbol} />
-          ))
+          <ShipPurchaseOption data={ship} waypointSymbol={data.symbol} />
+        ))
         : null}
     </Card>
   );
