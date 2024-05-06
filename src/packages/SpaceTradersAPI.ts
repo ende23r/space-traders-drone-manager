@@ -376,7 +376,7 @@ const ShipMount = z
           "DIAMONDS",
           "URANITE_ORE",
           "MERITIUM_ORE",
-        ])
+        ]),
       )
       .optional(),
     requirements: ShipRequirements,
@@ -1127,7 +1127,7 @@ This also includes a few global elements, such as announcements, server reset da
             mostCredits: z.array(
               z
                 .object({ agentSymbol: z.string(), credits: z.number().int() })
-                .passthrough()
+                .passthrough(),
             ),
             mostSubmittedCharts: z.array(
               z
@@ -1135,7 +1135,7 @@ This also includes a few global elements, such as announcements, server reset da
                   agentSymbol: z.string(),
                   chartCount: z.number().int(),
                 })
-                .passthrough()
+                .passthrough(),
             ),
           })
           .passthrough(),
@@ -1143,10 +1143,10 @@ This also includes a few global elements, such as announcements, server reset da
           .object({ next: z.string(), frequency: z.string() })
           .passthrough(),
         announcements: z.array(
-          z.object({ title: z.string(), body: z.string() }).passthrough()
+          z.object({ title: z.string(), body: z.string() }).passthrough(),
         ),
         links: z.array(
-          z.object({ name: z.string(), url: z.string() }).passthrough()
+          z.object({ name: z.string(), url: z.string() }).passthrough(),
         ),
       })
       .passthrough(),
@@ -1860,12 +1860,12 @@ When refining, 30 basic goods will be converted into 10 processed goods.`,
             produced: z.array(
               z
                 .object({ tradeSymbol: z.string(), units: z.number().int() })
-                .passthrough()
+                .passthrough(),
             ),
             consumed: z.array(
               z
                 .object({ tradeSymbol: z.string(), units: z.number().int() })
-                .passthrough()
+                .passthrough(),
             ),
           })
           .passthrough(),

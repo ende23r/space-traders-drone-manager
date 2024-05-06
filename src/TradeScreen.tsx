@@ -13,14 +13,14 @@ type Market = z.infer<typeof schemas.Market>;
 async function getMarketDetails(bearerToken: string, waypointSymbol: string) {
   const options = {
     headers: {
-      Authorization: `Bearer ${bearerToken}`
+      Authorization: `Bearer ${bearerToken}`,
     },
     params: {
       systemSymbol: getSystemSymbol(waypointSymbol),
-      waypointSymbol
-    }
-  }
-  const response = await api["get-market"](options)
+      waypointSymbol,
+    },
+  };
+  const response = await api["get-market"](options);
   return response.data;
 }
 
@@ -107,23 +107,27 @@ function TradeGood(props: {tradeGood: MarketTradeGood, shipSymbol: string}) {
     </Container>;  
 }*/
 
-function Market(props: {waypointSymbol: string }) {
-  const { waypointSymbol} = props;
+function Market(props: { waypointSymbol: string }) {
+  const { waypointSymbol } = props;
   const [bearerToken] = useLocalStorage("bearerToken", "");
 
   const [marketData, setMarketData] = useState<Market>();
 
   useEffect(() => {
-    const pollMarket = async() => {
-    if (waypointSymbol) {
-        setMarketData(await getMarketDetails(bearerToken, waypointSymbol))
+    const pollMarket = async () => {
+      if (waypointSymbol) {
+        setMarketData(await getMarketDetails(bearerToken, waypointSymbol));
       }
-  }
+    };
     pollMarket();
-  }, [bearerToken, waypointSymbol, setMarketData])
+  }, [bearerToken, waypointSymbol, setMarketData]);
 
   if (!marketData) {
-    return <Paper><Typography>No market data available</Typography></Paper>
+    return (
+      <Paper>
+        <Typography>No market data available</Typography>
+      </Paper>
+    );
   }
 
   let tradeGoodsContainer;
@@ -134,38 +138,53 @@ function Market(props: {waypointSymbol: string }) {
         {JSON.stringify(marketData.tradeGoods)}
         {/*marketData.tradeGoods.map((tradeGood) => <TradeGood tradeGood={tradeGood} shipSymbol={shipSymbol} />)*/}
       </Container>
-    )
+    );
   }
-  
-  return <Paper>
-    <Typography variant="h3">Market {marketData.symbol}</Typography>
-    <Container>
-      <Typography variant="h4">Imports</Typography>
-      {marketData.imports.map((impor) => impor.symbol)}
-      <Typography variant="h4">Exports</Typography>
-      {marketData.exports.map((expor) => expor.symbol)}
-    </Container>
-    {tradeGoodsContainer}
+
+  return (
+    <Paper>
+      <Typography variant="h3">Market {marketData.symbol}</Typography>
+      <Container>
+        <Typography variant="h4">Imports</Typography>
+        {marketData.imports.map((impor) => impor.symbol)}
+        <Typography variant="h4">Exports</Typography>
+        {marketData.exports.map((expor) => expor.symbol)}
+      </Container>
+      {tradeGoodsContainer}
     </Paper>
+  );
 }
 
 function TradeScreen() {
   // const {data: shipData} = useMyShips();
   // const shipList = shipData?.data || [];
-  const {data: agentData} = useMyAgent();
+  const { data: agentData } = useMyAgent();
   const systemSymbol = getSystemSymbol(agentData.data.headquarters);
-  const {data: navData} = useLocations(systemSymbol);
-  const marketLocations = navData?.filter((navLoc) => navLoc.traits.map((trait) => trait.symbol).includes("MARKETPLACE")) || []
-  console.log({navData, marketLocations})
+  const { data: navData } = useLocations(systemSymbol);
+  const marketLocations =
+    navData?.filter((navLoc) =>
+      navLoc.traits.map((trait) => trait.symbol).includes("MARKETPLACE"),
+    ) || [];
+  console.log({ navData, marketLocations });
 
-  const [marketSymbol, setMarketSymbol] = useState(marketLocations[0]?.symbol || "");
+  const [marketSymbol, setMarketSymbol] = useState(
+    marketLocations[0]?.symbol || "",
+  );
 
-  return <>
-    <Select label="Selected Marketplace" value={marketSymbol} onChange={(event) => setMarketSymbol(event.target.value)}>
-      {marketLocations.map((navLoc) => <MenuItem value={navLoc.symbol}>{navLoc.symbol}</MenuItem>)}
-    </Select>
-    <Market waypointSymbol={marketSymbol} />
-  </>
+  return (
+    <>
+      <Select
+        label="Selected Marketplace"
+        value={marketSymbol}
+        onChange={(event) => setMarketSymbol(event.target.value)}
+      >
+        {marketLocations.map((navLoc) => (
+          <MenuItem value={navLoc.symbol}>{navLoc.symbol}</MenuItem>
+        ))}
+      </Select>
+      <Market waypointSymbol={marketSymbol} />
+    </>
+  );
 }
 
-export default TradeScreen
+export default TradeScreen;
