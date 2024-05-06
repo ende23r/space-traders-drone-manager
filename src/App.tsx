@@ -25,6 +25,23 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { getSystemSymbol } from "./Util";
 import BearerAuthDialog from "./BearerAuthDialog";
+import { processUpdatesLoop, scheduleUpdate } from "./Scheduler";
+
+// Kick off game loop
+processUpdatesLoop();
+function secsInTheFuture(d: Date, n: number) {
+  const future = new Date();
+  future.setSeconds(d.getSeconds() + n);
+  return future;
+}
+const getUpdate = (n: number) => ({
+  callback: () => {
+    console.log(n * n);
+  }, scheduledTime: secsInTheFuture(new Date(), n)
+})
+for (let i = 1; i < 5; i++) {
+  scheduleUpdate(getUpdate(i))
+}
 
 interface TabPanelProps {
   children?: React.ReactNode;
