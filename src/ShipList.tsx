@@ -9,6 +9,7 @@ import {
   MenuItem,
   Select,
   Switch,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import { schemas } from "./packages/SpaceTradersAPI";
@@ -28,13 +29,6 @@ import { DateContext } from "./App";
 type Ship = z.infer<typeof schemas.Ship>;
 type ShipNav = z.infer<typeof schemas.ShipNav>;
 type Waypoint = z.infer<typeof schemas.Waypoint>;
-
-function computeRemainingCooldownFraction(cooldown: any) {
-  return (
-    (cooldown.totalSeconds - cooldown.remainingSeconds + 0.01) /
-    (cooldown.totalSeconds + 0.01)
-  );
-}
 
 function computeDistance(shipNav: ShipNav, destinationNav: Waypoint) {
   const originNav = shipNav.route.destination;
@@ -91,6 +85,8 @@ function ExtractButton(props: { ship: Ship }) {
   );
 }
 
+const checkOrX = (b: boolean) => (b ? "✅" : "❌");
+
 function ShipCard(props: { ship: Ship }) {
   const { ship } = props;
 
@@ -115,11 +111,41 @@ function ShipCard(props: { ship: Ship }) {
 
   const destinationNav =
     navLocations.find((loc) => loc.symbol === destination) || null;
+  const distToDest = destinationNav
+    ? computeDistance(ship.nav, destinationNav)
+    : -1;
   const distanceIndicator = destinationNav ? (
-    <Typography>
-      Distance to Target: {computeDistance(ship.nav, destinationNav)} units.
-    </Typography>
+    <Typography>Distance to Target: {distToDest} units.</Typography>
   ) : null;
+
+  const docked = ship.nav.status === "DOCKED";
+  const inOrbit = ship.nav.status === "IN_ORBIT";
+  const noNewDest = destination === ship.nav.waypointSymbol;
+  const noFuel = distToDest > ship.fuel.current;
+  const navigationDisabled = !inOrbit || noNewDest || noFuel;
+  const navTooltip = (
+    <div>
+      Navigation requires 3 things:
+      <br />
+      1. Ship in orbit {checkOrX(inOrbit)}
+      <br />
+      2. Destination set {checkOrX(!noNewDest)}
+      <br />
+      3. 1 unit of fuel per unit of distance {checkOrX(!noFuel)}
+    </div>
+  );
+
+  const fullFuel = ship.fuel.current === ship.fuel.capacity;
+  const fuellingDisabled = !docked || fullFuel;
+  const fuellingTooltip = (
+    <div>
+      1. Ship docked {checkOrX(docked)}
+      <br />
+      2. Tank not full {checkOrX(!fullFuel)}
+    </div>
+  );
+
+  const inTransit = ship.nav.status === "IN_TRANSIT";
 
   return (
     <Card variant="outlined">
@@ -136,6 +162,7 @@ function ShipCard(props: { ship: Ship }) {
         </div>
         <div>
           <Switch
+            disabled={inTransit}
             checked={ship.nav.status !== "DOCKED"}
             onChange={() =>
               switchDocked(
@@ -177,16 +204,27 @@ function ShipCard(props: { ship: Ship }) {
         </div>
       </CardContent>
       <CardActions>
-        <Button
-          variant="contained"
-          onClick={() =>
-            triggerNavigation({ destinationWaypointSymbol: destination })
-          }
-        >
-          Punch It!
-        </Button>
+        <Tooltip title={navTooltip}>
+          <span>
+            <Button
+              variant="contained"
+              disabled={navigationDisabled}
+              onClick={() =>
+                triggerNavigation({ destinationWaypointSymbol: destination })
+              }
+            >
+              Punch It!
+            </Button>
+          </span>
+        </Tooltip>
         <ExtractButton ship={ship} />
-        <Button onClick={() => fuelShip()}>Fill 'er up!</Button>
+        <Tooltip title={fuellingTooltip}>
+          <span>
+            <Button disabled={fuellingDisabled} onClick={() => fuelShip()}>
+              Fill 'er up! (price not available)
+            </Button>
+          </span>
+        </Tooltip>
       </CardActions>
     </Card>
   );

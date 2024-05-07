@@ -315,6 +315,11 @@ async function triggerNavigation(
   };
   const response = await api["navigate-ship"](body, options);
   globalQueryClient.invalidateQueries({ queryKey: ["get-my-ships"] });
+  scheduleUpdate({
+    callback: () =>
+      globalQueryClient.invalidateQueries({ queryKey: ["get-my-ships"] }),
+    scheduledTime: new Date(response.data.nav.route.arrival),
+  });
   return response.data;
 }
 export function useNavigateMutation(shipSymbol: string) {
@@ -338,7 +343,6 @@ async function triggerExtract(bearerToken: string, shipSymbol: string) {
   };
   const response = await api["extract-resources"]({}, options);
   globalQueryClient.invalidateQueries({ queryKey: ["get-my-ships"] });
-  console.log({ extractionData: response.data });
   scheduleUpdate({
     callback: () =>
       globalQueryClient.invalidateQueries({ queryKey: ["get-my-ships"] }),

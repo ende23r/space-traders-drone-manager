@@ -13,7 +13,7 @@ import {
   CardActions,
   Typography,
 } from "@mui/material";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useEffect, useState } from "react";
 import ShipyardList from "./ShipyardList";
 import ContractCard from "./ContractList";
 import TradeScreen from "./TradeScreen";
