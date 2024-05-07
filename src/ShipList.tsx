@@ -64,6 +64,33 @@ function TimedProgress(props: {
   return <LinearProgress variant="determinate" value={progress} />;
 }
 
+function ExtractButton(props: { ship: Ship }) {
+  const { ship } = props;
+
+  const date = useContext(DateContext);
+  const { mutate: triggerExtract, data } = useExtractMutation(ship.symbol);
+
+  const extractionDisabled =
+    ship.nav.status !== "IN_ORBIT" ||
+    !validMiningWaypointTypes.includes(ship.nav.route.destination.type) ||
+    ship.cooldown.remainingSeconds > 0;
+  const endTimestamp =
+    Date.parse(data?.cooldown.expiration || "") ||
+    Date.now() + ship.cooldown.remainingSeconds * 1000;
+  const remainingSecs = Math.max(endTimestamp - date.getTime(), 0) / 1000;
+
+  return (
+    <Button
+      disabled={extractionDisabled}
+      onClick={async () => {
+        triggerExtract();
+      }}
+    >
+      Extract {ship.cooldown.remainingSeconds > 0 ? `(${remainingSecs} s)` : ""}
+    </Button>
+  );
+}
+
 function ShipCard(props: { ship: Ship }) {
   const { ship } = props;
 
@@ -84,15 +111,8 @@ function ShipCard(props: { ship: Ship }) {
     />
   );
 
-  const { mutate: triggerExtract /*data: extractData */ } = useExtractMutation(
-    ship.symbol,
-  );
   const { mutate: fuelShip } = useFuelShipMutation(ship.symbol);
 
-  const extractionDisabled =
-    ship.nav.status !== "IN_ORBIT" ||
-    !validMiningWaypointTypes.includes(ship.nav.route.destination.type) ||
-    ship.cooldown.remainingSeconds > 0;
   const destinationNav =
     navLocations.find((loc) => loc.symbol === destination) || null;
   const distanceIndicator = destinationNav ? (
@@ -155,10 +175,6 @@ function ShipCard(props: { ship: Ship }) {
           {navProgress}
           {distanceIndicator}
         </div>
-        <div>
-          Cooldown:{" "}
-          <progress value={computeRemainingCooldownFraction(ship.cooldown)} />{" "}
-        </div>
       </CardContent>
       <CardActions>
         <Button
@@ -169,14 +185,7 @@ function ShipCard(props: { ship: Ship }) {
         >
           Punch It!
         </Button>
-        <Button
-          disabled={extractionDisabled}
-          onClick={async () => {
-            triggerExtract();
-          }}
-        >
-          Extract
-        </Button>
+        <ExtractButton ship={ship} />
         <Button onClick={() => fuelShip()}>Fill 'er up!</Button>
       </CardActions>
     </Card>
