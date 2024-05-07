@@ -63,8 +63,8 @@ function ShipSaleList(props: { data: Shipyard | undefined }) {
       {/*<Typography>{data.shipTypes.map((shipType) => shipType.type)}</Typography>*/}
       {data.ships
         ? data.ships.map((ship) => (
-          <ShipPurchaseOption data={ship} waypointSymbol={data.symbol} />
-        ))
+            <ShipPurchaseOption data={ship} waypointSymbol={data.symbol} />
+          ))
         : null}
     </Card>
   );

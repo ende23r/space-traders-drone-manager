@@ -338,11 +338,12 @@ async function triggerExtract(bearerToken: string, shipSymbol: string) {
   };
   const response = await api["extract-resources"]({}, options);
   globalQueryClient.invalidateQueries({ queryKey: ["get-my-ships"] });
-  console.log({ extractionData: response.data })
+  console.log({ extractionData: response.data });
   scheduleUpdate({
-    callback: () => globalQueryClient.invalidateQueries({ queryKey: ["get-my-ships"] }),
-    scheduledTime: new Date(response.data.cooldown.expiration || "")
-  })
+    callback: () =>
+      globalQueryClient.invalidateQueries({ queryKey: ["get-my-ships"] }),
+    scheduledTime: new Date(response.data.cooldown.expiration || ""),
+  });
   return response.data;
 }
 
@@ -353,7 +354,6 @@ export function useExtractMutation(shipSymbol: string) {
     mutationFn: () => triggerExtract(bearerToken, shipSymbol),
   });
 }
-
 
 async function fuelShip(bearerToken: string, shipSymbol: string) {
   const options = {

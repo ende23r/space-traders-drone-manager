@@ -27,7 +27,7 @@ import { getSystemSymbol } from "./Util";
 import BearerAuthDialog from "./BearerAuthDialog";
 import { processUpdatesLoop } from "./Scheduler";
 
-const DateContext = createContext(new Date());
+export const DateContext = createContext(new Date());
 
 // Kick off game loop
 processUpdatesLoop();
@@ -85,8 +85,6 @@ function InfoTabs() {
 
 function AgentCard() {
   const { agent: myAgent } = useMyAgent();
-  const date = useContext(DateContext);
-  console.log({ date })
   if (!myAgent.symbol) {
     return (
       <Card variant="outlined">
@@ -118,10 +116,12 @@ function DateContextWrapper(props: { children: any }) {
   useEffect(() => {
     // Can use clearInterval to turn this off
     setInterval(() => {
-      setDate(new Date())
-    }, 500)
-  }, [])
-  return <DateContext.Provider value={date}>{props.children}</DateContext.Provider>
+      setDate(new Date());
+    }, 500);
+  }, []);
+  return (
+    <DateContext.Provider value={date}>{props.children}</DateContext.Provider>
+  );
 }
 
 function App() {

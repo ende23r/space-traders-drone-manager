@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import {
   Button,
   Card,
   CardActions,
   CardContent,
   CardHeader,
+  LinearProgress,
   MenuItem,
   Select,
   Switch,
@@ -22,6 +23,7 @@ import {
 } from "./Api";
 import { z } from "zod";
 import { toast } from "react-toastify";
+import { DateContext } from "./App";
 
 type Ship = z.infer<typeof schemas.Ship>;
 type ShipNav = z.infer<typeof schemas.ShipNav>;
@@ -34,19 +36,33 @@ function computeRemainingCooldownFraction(cooldown: any) {
   );
 }
 
-
 function computeDistance(shipNav: ShipNav, destinationNav: Waypoint) {
   const originNav = shipNav.route.destination;
   const distance = Math.sqrt(
     Math.pow(destinationNav.x - originNav.x, 2) +
-    Math.pow(destinationNav.y - originNav.y, 2),
+      Math.pow(destinationNav.y - originNav.y, 2),
   );
   return distance;
 }
 
 const validMiningWaypointTypes = [
-  "ASTEROID", "ASTEROID_FIELD", "ENGINEERED_ASTEROID"
-]
+  "ASTEROID",
+  "ASTEROID_FIELD",
+  "ENGINEERED_ASTEROID",
+];
+
+function TimedProgress(props: {
+  startTimestamp: number;
+  endTimestamp: number;
+}) {
+  const { startTimestamp, endTimestamp } = props;
+  const date = useContext(DateContext);
+
+  const totalTime = Math.max(endTimestamp - startTimestamp, 1);
+  const elapsedTime = Math.max(date.getTime() - startTimestamp, 1);
+  const progress = Math.min((elapsedTime / totalTime) * 100, 100);
+  return <LinearProgress variant="determinate" value={progress} />;
+}
 
 function ShipCard(props: { ship: Ship }) {
   const { ship } = props;
@@ -59,14 +75,24 @@ function ShipCard(props: { ship: Ship }) {
   );
 
   const { mutate: switchDocked } = useSwitchDockingMutation(ship.symbol);
-  const { mutate: triggerNavigation, /*data: navigateMutationData */ } = useNavigateMutation(ship.symbol);
-  // console.log({ navigateMutationData })
-  // This has nav.route.arrivalTime so we could use that to schedule the next ship update
+  const { mutate: triggerNavigation } = useNavigateMutation(ship.symbol);
+  const { arrival, departureTime } = ship.nav.route;
+  const navProgress = (
+    <TimedProgress
+      startTimestamp={Date.parse(departureTime)}
+      endTimestamp={Date.parse(arrival)}
+    />
+  );
 
-  const { mutate: triggerExtract, /*data: extractData */ } = useExtractMutation(ship.symbol);
+  const { mutate: triggerExtract /*data: extractData */ } = useExtractMutation(
+    ship.symbol,
+  );
   const { mutate: fuelShip } = useFuelShipMutation(ship.symbol);
 
-  const extractionDisabled = ship.nav.status !== "IN_ORBIT" || !validMiningWaypointTypes.includes(ship.nav.route.destination.type) || ship.cooldown.remainingSeconds > 0
+  const extractionDisabled =
+    ship.nav.status !== "IN_ORBIT" ||
+    !validMiningWaypointTypes.includes(ship.nav.route.destination.type) ||
+    ship.cooldown.remainingSeconds > 0;
   const destinationNav =
     navLocations.find((loc) => loc.symbol === destination) || null;
   const distanceIndicator = destinationNav ? (
@@ -115,7 +141,6 @@ function ShipCard(props: { ship: Ship }) {
         </div>
         <div>
           Navigation:{" "}
-          <progress value={computeRemainingCooldownFraction(ship.cooldown)} />
           <Select
             label="Destination"
             value={destination}
@@ -127,6 +152,7 @@ function ShipCard(props: { ship: Ship }) {
               </MenuItem>
             ))}
           </Select>
+          {navProgress}
           {distanceIndicator}
         </div>
         <div>
@@ -137,7 +163,8 @@ function ShipCard(props: { ship: Ship }) {
       <CardActions>
         <Button
           variant="contained"
-          onClick={() => triggerNavigation({ destinationWaypointSymbol: destination })
+          onClick={() =>
+            triggerNavigation({ destinationWaypointSymbol: destination })
           }
         >
           Punch It!
@@ -150,9 +177,7 @@ function ShipCard(props: { ship: Ship }) {
         >
           Extract
         </Button>
-        <Button onClick={() => fuelShip()}>
-          Fill 'er up!
-        </Button>
+        <Button onClick={() => fuelShip()}>Fill 'er up!</Button>
       </CardActions>
     </Card>
   );
