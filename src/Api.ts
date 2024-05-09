@@ -177,7 +177,7 @@ async function queryNavigationInfo(system: string) {
     waypoints.push(...pageResponse.data);
     page += 1;
   }
-  return waypoints;
+  return waypoints.sort((a, b) => a.symbol.localeCompare(b.symbol));
 }
 
 export function useLocations(systemSymbol: string) {
