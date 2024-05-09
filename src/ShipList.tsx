@@ -40,7 +40,7 @@ function computeDistance(shipNav: ShipNav, destinationNav: Waypoint) {
   const originNav = shipNav.route.destination;
   const distance = Math.sqrt(
     Math.pow(destinationNav.x - originNav.x, 2) +
-    Math.pow(destinationNav.y - originNav.y, 2),
+      Math.pow(destinationNav.y - originNav.y, 2),
   );
   return distance;
 }

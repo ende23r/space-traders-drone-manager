@@ -358,8 +358,8 @@ export function useExtractMutation(shipSymbol: string) {
     mutationKey: ["extract-resources", shipSymbol],
     mutationFn: () => triggerExtract(bearerToken, shipSymbol),
     onSuccess: (data) => {
-      toast(`Extracted ${JSON.stringify(data.extraction.yield)}.`)
-    }
+      toast(`Extracted ${JSON.stringify(data.extraction.yield)}.`);
+    },
   });
 }
 
@@ -383,7 +383,12 @@ export function useFuelShipMutation(shipSymbol: string) {
   });
 }
 
-async function jettisonCargo(bearerToken: string, shipSymbol: string, cargoSymbol: TradeSymbol, units: number) {
+async function jettisonCargo(
+  bearerToken: string,
+  shipSymbol: string,
+  cargoSymbol: TradeSymbol,
+  units: number,
+) {
   const options = {
     headers: bearerPostHeaders(bearerToken),
     params: {
@@ -392,8 +397,8 @@ async function jettisonCargo(bearerToken: string, shipSymbol: string, cargoSymbo
   };
   const body = {
     symbol: cargoSymbol,
-    units
-  }
+    units,
+  };
   const response = await api["jettison"](body, options);
   globalQueryClient.invalidateQueries({ queryKey: ["get-my-ships"] });
   return response.data;
@@ -403,10 +408,16 @@ export function useJettisonMutation(shipSymbol: string) {
   const [bearerToken] = useLocalStorage("bearerToken", "");
   return useMutation({
     mutationKey: ["jettison", shipSymbol],
-    mutationFn: ({ cargoSymbol, units }: { cargoSymbol: TradeSymbol, units: number }) => jettisonCargo(bearerToken, shipSymbol, cargoSymbol, units),
+    mutationFn: ({
+      cargoSymbol,
+      units,
+    }: {
+      cargoSymbol: TradeSymbol;
+      units: number;
+    }) => jettisonCargo(bearerToken, shipSymbol, cargoSymbol, units),
     onSuccess: () => {
-      toast(`Successfully jettisoned cargo.`)
-    }
+      toast(`Successfully jettisoned cargo.`);
+    },
   });
 }
 
