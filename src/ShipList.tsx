@@ -34,7 +34,7 @@ function computeDistance(shipNav: ShipNav, destinationNav: Waypoint) {
   const originNav = shipNav.route.destination;
   const distance = Math.sqrt(
     Math.pow(destinationNav.x - originNav.x, 2) +
-      Math.pow(destinationNav.y - originNav.y, 2),
+    Math.pow(destinationNav.y - originNav.y, 2),
   );
   return distance;
 }
@@ -64,24 +64,32 @@ function ExtractButton(props: { ship: Ship }) {
   const date = useContext(DateContext);
   const { mutate: triggerExtract, data } = useExtractMutation(ship.symbol);
 
-  const extractionDisabled =
-    ship.nav.status !== "IN_ORBIT" ||
-    !validMiningWaypointTypes.includes(ship.nav.route.destination.type) ||
-    ship.cooldown.remainingSeconds > 0;
+  const inOrbit = ship.nav.status === "IN_ORBIT";
+  const validMiningLocation = validMiningWaypointTypes.includes(ship.nav.route.destination.type);
+  const onCooldown = ship.cooldown.remainingSeconds > 0;
+  const extractionDisabled = !inOrbit || !validMiningLocation || onCooldown;
+  const disabledTooltip = <div>
+    1. In Orbit {checkOrX(inOrbit)}<br />
+    2. At Asteroid {checkOrX(validMiningLocation)}<br />
+    3. Not on cooldown {checkOrX(!onCooldown)}
+  </div>
+
   const endTimestamp =
     Date.parse(data?.cooldown.expiration || "") ||
     Date.now() + ship.cooldown.remainingSeconds * 1000;
-  const remainingSecs = Math.max(endTimestamp - date.getTime(), 0) / 1000;
+  const remainingSecs = Math.floor(Math.max(endTimestamp - date.getTime(), 0) / 1000);
 
   return (
-    <Button
-      disabled={extractionDisabled}
-      onClick={async () => {
-        triggerExtract();
-      }}
-    >
-      Extract {ship.cooldown.remainingSeconds > 0 ? `(${remainingSecs} s)` : ""}
-    </Button>
+    <Tooltip title={disabledTooltip}>
+      <Button
+        disabled={extractionDisabled}
+        onClick={async () => {
+          triggerExtract();
+        }}
+      >
+        Extract {ship.cooldown.remainingSeconds > 0 ? `(${remainingSecs} s)` : ""}
+      </Button>
+    </Tooltip>
   );
 }
 
