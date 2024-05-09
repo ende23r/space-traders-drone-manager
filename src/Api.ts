@@ -357,6 +357,9 @@ export function useExtractMutation(shipSymbol: string) {
   return useMutation({
     mutationKey: ["extract-resources", shipSymbol],
     mutationFn: () => triggerExtract(bearerToken, shipSymbol),
+    onSuccess: (data) => {
+      toast(`Extracted ${JSON.stringify(data.extraction.yield)}.`)
+    }
   });
 }
 
