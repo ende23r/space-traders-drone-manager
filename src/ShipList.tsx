@@ -1,5 +1,8 @@
 import { useState, useContext } from "react";
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Button,
   Card,
   CardActions,
@@ -25,6 +28,7 @@ import {
 import { z } from "zod";
 import { toast } from "react-toastify";
 import { DateContext } from "./App";
+import { ExpandMore } from "@mui/icons-material";
 
 type Ship = z.infer<typeof schemas.Ship>;
 type ShipNav = z.infer<typeof schemas.ShipNav>;
@@ -175,7 +179,18 @@ function ShipCard(props: { ship: Ship }) {
           (Fuel: {ship.fuel.current}/{ship.fuel.capacity})
         </Typography>
         <div>
-          Cargo: {ship.cargo.units}/{ship.cargo.capacity}
+          <Accordion>
+            <AccordionSummary expandIcon={<ExpandMore />}>
+              Cargo: {ship.cargo.units}/{ship.cargo.capacity}
+            </AccordionSummary>
+            <AccordionDetails>
+              {ship.cargo.inventory.map((item) => (
+                <Typography>
+                  {item.name}: {item.units}
+                </Typography>
+              ))}
+            </AccordionDetails>
+          </Accordion>
         </div>
         <div>
           <Switch
