@@ -61,7 +61,12 @@ function InfoTabs() {
   const [tabIndex, setTabIndex] = useState(0);
   return (
     <>
-      <Tabs variant="scrollable" scrollButtons="auto" value={tabIndex} onChange={(_, v) => setTabIndex(v)}>
+      <Tabs
+        variant="scrollable"
+        scrollButtons="auto"
+        value={tabIndex}
+        onChange={(_, v) => setTabIndex(v)}
+      >
         <Tab label="Contracts" />
         <Tab label="System Waypoints" />
         <Tab label="Shipyards" />
