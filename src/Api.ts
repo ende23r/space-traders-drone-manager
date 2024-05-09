@@ -61,6 +61,7 @@ type Agent = z.infer<typeof schemas.Agent>;
 // type Ship = z.infer<typeof schemas.Ship>;
 // type Meta = z.infer<typeof schemas.Meta>;
 // type Waypoint = z.infer<typeof schemas.Waypoint>;
+type TradeSymbol = z.infer<typeof schemas.TradeSymbol>;
 
 const noDataAgent: Agent = {
   symbol: "",
@@ -376,6 +377,33 @@ export function useFuelShipMutation(shipSymbol: string) {
   return useMutation({
     mutationKey: ["refuel-ship", shipSymbol],
     mutationFn: () => fuelShip(bearerToken, shipSymbol),
+  });
+}
+
+async function jettisonCargo(bearerToken: string, shipSymbol: string, cargoSymbol: TradeSymbol, units: number) {
+  const options = {
+    headers: bearerPostHeaders(bearerToken),
+    params: {
+      shipSymbol,
+    },
+  };
+  const body = {
+    symbol: cargoSymbol,
+    units
+  }
+  const response = await api["jettison"](body, options);
+  globalQueryClient.invalidateQueries({ queryKey: ["get-my-ships"] });
+  return response.data;
+}
+
+export function useJettisonMutation(shipSymbol: string) {
+  const [bearerToken] = useLocalStorage("bearerToken", "");
+  return useMutation({
+    mutationKey: ["jettison", shipSymbol],
+    mutationFn: ({ cargoSymbol, units }: { cargoSymbol: TradeSymbol, units: number }) => jettisonCargo(bearerToken, shipSymbol, cargoSymbol, units),
+    onSuccess: () => {
+      toast(`Successfully jettisoned cargo.`)
+    }
   });
 }
 

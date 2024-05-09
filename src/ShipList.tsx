@@ -11,6 +11,7 @@ import {
   LinearProgress,
   MenuItem,
   Select,
+  Stack,
   Switch,
   Tooltip,
   Typography,
@@ -21,6 +22,7 @@ import {
   useExtractMutation,
   useFuelShipMutation,
   useHQLocations,
+  useJettisonMutation,
   useMyShips,
   useNavigateMutation,
   useSwitchDockingMutation,
@@ -38,7 +40,7 @@ function computeDistance(shipNav: ShipNav, destinationNav: Waypoint) {
   const originNav = shipNav.route.destination;
   const distance = Math.sqrt(
     Math.pow(destinationNav.x - originNav.x, 2) +
-      Math.pow(destinationNav.y - originNav.y, 2),
+    Math.pow(destinationNav.y - originNav.y, 2),
   );
   return distance;
 }
@@ -129,6 +131,7 @@ function ShipCard(props: { ship: Ship }) {
   );
 
   const { mutate: fuelShip } = useFuelShipMutation(ship.symbol);
+  const { mutate: jettison } = useJettisonMutation(ship.symbol);
 
   const destinationNav =
     navLocations.find((loc) => loc.symbol === destination) || null;
@@ -185,9 +188,18 @@ function ShipCard(props: { ship: Ship }) {
             </AccordionSummary>
             <AccordionDetails>
               {ship.cargo.inventory.map((item) => (
-                <Typography>
-                  {item.name}: {item.units}
-                </Typography>
+                <Stack direction="row">
+                  <Typography>
+                    {item.name}: {item.units}
+                  </Typography>
+                  <Button
+                    onClick={() =>
+                      jettison({ cargoSymbol: item.symbol, units: item.units })
+                    }
+                  >
+                    Drop
+                  </Button>
+                </Stack>
               ))}
             </AccordionDetails>
           </Accordion>
