@@ -242,6 +242,9 @@ export function useSwitchDockingMutation(shipSymbol: string) {
     mutationKey: ["switch-docked", shipSymbol],
     mutationFn: ({ navStatus }: any) =>
       switchDockedStatus(bearerToken, shipSymbol, navStatus),
+    onError: (e) => {
+      toast(e.toString());
+    },
   });
 }
 
@@ -262,6 +265,9 @@ export function useAcceptContractMutation(contractId: string) {
   return useMutation({
     mutationKey: ["accept-contract"],
     mutationFn: () => acceptContract(bearerToken, contractId),
+    onError: (e) => {
+      toast(e.toString());
+    },
   });
 }
 
@@ -281,6 +287,9 @@ export function useNegotiateContractMutation() {
     mutationKey: ["negotiateContract"],
     mutationFn: ({ shipSymbol }: { shipSymbol: string }) =>
       negotiateContract(bearerToken, shipSymbol),
+    onError: (e) => {
+      toast(e.toString());
+    },
   });
 }
 // Other contract functions:
@@ -332,6 +341,9 @@ export function useNavigateMutation(shipSymbol: string) {
     }: {
       destinationWaypointSymbol: string;
     }) => triggerNavigation(bearerToken, shipSymbol, destinationWaypointSymbol),
+    onError: (e) => {
+      toast(e.toString());
+    },
   });
 }
 
@@ -360,6 +372,9 @@ export function useExtractMutation(shipSymbol: string) {
     onSuccess: (data) => {
       toast(`Extracted ${JSON.stringify(data.extraction.yield)}.`);
     },
+    onError: (e) => {
+      toast(e.toString());
+    },
   });
 }
 
@@ -380,6 +395,9 @@ export function useFuelShipMutation(shipSymbol: string) {
   return useMutation({
     mutationKey: ["refuel-ship", shipSymbol],
     mutationFn: () => fuelShip(bearerToken, shipSymbol),
+    onError: (e) => {
+      toast(e.toString());
+    },
   });
 }
 
@@ -417,6 +435,9 @@ export function useJettisonMutation(shipSymbol: string) {
     }) => jettisonCargo(bearerToken, shipSymbol, cargoSymbol, units),
     onSuccess: () => {
       toast(`Successfully jettisoned cargo.`);
+    },
+    onError: (e) => {
+      toast(e.toString());
     },
   });
 }
