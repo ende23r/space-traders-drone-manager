@@ -56,6 +56,7 @@ import { api, schemas } from "./packages/SpaceTradersAPI";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import { getSystemSymbol } from "./Util";
 import { scheduleUpdate } from "./Scheduler";
+import { handleAxiosError } from "./AxiosErrorHandling";
 
 export type Agent = z.infer<typeof schemas.Agent>;
 export type Ship = z.infer<typeof schemas.Ship>;
@@ -242,9 +243,7 @@ export function useSwitchDockingMutation(shipSymbol: string) {
     mutationKey: ["switch-docked", shipSymbol],
     mutationFn: ({ navStatus }: any) =>
       switchDockedStatus(bearerToken, shipSymbol, navStatus),
-    onError: (e) => {
-      toast(e.toString());
-    },
+    onError: handleAxiosError,
   });
 }
 
@@ -265,9 +264,7 @@ export function useAcceptContractMutation(contractId: string) {
   return useMutation({
     mutationKey: ["accept-contract"],
     mutationFn: () => acceptContract(bearerToken, contractId),
-    onError: (e) => {
-      toast(e.toString());
-    },
+    onError: handleAxiosError,
   });
 }
 
@@ -287,9 +284,7 @@ export function useNegotiateContractMutation() {
     mutationKey: ["negotiateContract"],
     mutationFn: ({ shipSymbol }: { shipSymbol: string }) =>
       negotiateContract(bearerToken, shipSymbol),
-    onError: (e) => {
-      toast(e.toString());
-    },
+    onError: handleAxiosError,
   });
 }
 // Other contract functions:
@@ -341,9 +336,7 @@ export function useNavigateMutation(shipSymbol: string) {
     }: {
       destinationWaypointSymbol: string;
     }) => triggerNavigation(bearerToken, shipSymbol, destinationWaypointSymbol),
-    onError: (e) => {
-      toast(e.toString());
-    },
+    onError: handleAxiosError,
   });
 }
 
@@ -372,9 +365,7 @@ export function useExtractMutation(shipSymbol: string) {
     onSuccess: (data) => {
       toast(`Extracted ${JSON.stringify(data.extraction.yield)}.`);
     },
-    onError: (e) => {
-      toast(e.toString());
-    },
+    onError: handleAxiosError,
   });
 }
 
@@ -395,9 +386,7 @@ export function useFuelShipMutation(shipSymbol: string) {
   return useMutation({
     mutationKey: ["refuel-ship", shipSymbol],
     mutationFn: () => fuelShip(bearerToken, shipSymbol),
-    onError: (e) => {
-      toast(e.toString());
-    },
+    onError: handleAxiosError,
   });
 }
 
@@ -436,9 +425,7 @@ export function useJettisonMutation(shipSymbol: string) {
     onSuccess: () => {
       toast(`Successfully jettisoned cargo.`);
     },
-    onError: (e) => {
-      toast(e.toString());
-    },
+    onError: handleAxiosError,
   });
 }
 
@@ -488,9 +475,7 @@ export function useTransferMutation(shipSymbol: string) {
     onSuccess: () => {
       toast(`Transfered cargo from ${shipSymbol}.`);
     },
-    onError: (e) => {
-      toast(e.toString());
-    },
+    onError: handleAxiosError,
   });
 }
 
@@ -541,9 +526,7 @@ export function useDeliverContractMutation(contractId: string) {
     onSuccess: () => {
       toast(`Delivered cargo for contract ${contractId}.`);
     },
-    onError: (e) => {
-      toast(e.toString());
-    },
+    onError: handleAxiosError,
   });
 }
 
@@ -613,9 +596,7 @@ export function useBuyGoodMutation() {
     onSuccess: (_data, vars) => {
       toast(`Bought ${vars.cargoSymbol}.`);
     },
-    onError: (e) => {
-      toast(e.toString());
-    },
+    onError: handleAxiosError,
   });
 }
 
@@ -659,9 +640,7 @@ export function useSellGoodMutation() {
     onSuccess: (_data, vars) => {
       toast(`Sold ${vars.cargoSymbol}.`);
     },
-    onError: (e) => {
-      toast(e.toString());
-    },
+    onError: handleAxiosError,
   });
 }
 
