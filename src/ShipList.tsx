@@ -23,6 +23,8 @@ import {
 import { schemas } from "./packages/SpaceTradersAPI";
 import {
   globalQueryClient,
+  useContracts,
+  useDeliverContractMutation,
   useExtractMutation,
   useFuelShipMutation,
   useHQLocations,
@@ -138,6 +140,12 @@ function ShipCard(props: { ship: Ship; startTransfer: (s: string) => void }) {
   const { mutate: fuelShip } = useFuelShipMutation(ship.symbol);
   const { mutate: jettison } = useJettisonMutation(ship.symbol);
 
+  const { data: contractData } = useContracts();
+  const topContract = contractData?.data[0];
+  const { mutate: deliverContract } = useDeliverContractMutation(
+    topContract?.id || "",
+  );
+
   const destinationNav =
     navLocations.find((loc) => loc.symbol === destination) || null;
   const distToDest = destinationNav
@@ -200,6 +208,17 @@ function ShipCard(props: { ship: Ship; startTransfer: (s: string) => void }) {
                   <Typography>
                     {item.name}: {item.units}
                   </Typography>
+                  <Button
+                    onClick={() =>
+                      deliverContract({
+                        fromShipSymbol: ship.symbol,
+                        cargoSymbol: item.symbol,
+                        units: item.units,
+                      })
+                    }
+                  >
+                    Deliver
+                  </Button>
                   <Button
                     onClick={() =>
                       jettison({ cargoSymbol: item.symbol, units: item.units })

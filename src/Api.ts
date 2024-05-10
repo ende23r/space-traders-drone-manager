@@ -494,6 +494,59 @@ export function useTransferMutation(shipSymbol: string) {
   });
 }
 
+async function deliverContract(
+  bearerToken: string,
+  contractId: string,
+  fromShipSymbol: string,
+  cargoSymbol: TradeSymbol,
+  units: number,
+) {
+  const options = {
+    headers: bearerPostHeaders(bearerToken),
+    params: {
+      contractId,
+    },
+  };
+  const body = {
+    shipSymbol: fromShipSymbol,
+    tradeSymbol: cargoSymbol,
+    units,
+  };
+  const response = await api["deliver-contract"](body, options);
+  globalQueryClient.invalidateQueries({ queryKey: ["get-my-ships"] });
+  globalQueryClient.invalidateQueries({ queryKey: ["get-contracts"] });
+  return response.data;
+}
+
+export function useDeliverContractMutation(contractId: string) {
+  const [bearerToken] = useLocalStorage("bearerToken", "");
+  return useMutation({
+    mutationKey: ["deliver-contract", contractId],
+    mutationFn: ({
+      fromShipSymbol,
+      cargoSymbol,
+      units,
+    }: {
+      fromShipSymbol: string;
+      cargoSymbol: TradeSymbol;
+      units: number;
+    }) =>
+      deliverContract(
+        bearerToken,
+        contractId,
+        fromShipSymbol,
+        cargoSymbol,
+        units,
+      ),
+    onSuccess: () => {
+      toast(`Delivered cargo for contract ${contractId}.`);
+    },
+    onError: (e) => {
+      toast(e.toString());
+    },
+  });
+}
+
 export const globalQueryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error) => {
