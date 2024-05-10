@@ -442,6 +442,58 @@ export function useJettisonMutation(shipSymbol: string) {
   });
 }
 
+async function transferCargo(
+  bearerToken: string,
+  fromShipSymbol: string,
+  destShipSymbol: string,
+  cargoSymbol: TradeSymbol,
+  units: number,
+) {
+  const options = {
+    headers: bearerPostHeaders(bearerToken),
+    params: {
+      shipSymbol: fromShipSymbol,
+    },
+  };
+  const body = {
+    shipSymbol: destShipSymbol,
+    tradeSymbol: cargoSymbol,
+    units,
+  };
+  const response = await api["transfer-cargo"](body, options);
+  globalQueryClient.invalidateQueries({ queryKey: ["get-my-ships"] });
+  return response.data;
+}
+
+export function useTransferMutation(shipSymbol: string) {
+  const [bearerToken] = useLocalStorage("bearerToken", "");
+  return useMutation({
+    mutationKey: ["transfer-cargo", shipSymbol],
+    mutationFn: ({
+      destShipSymbol,
+      cargoSymbol,
+      units,
+    }: {
+      destShipSymbol: string;
+      cargoSymbol: TradeSymbol;
+      units: number;
+    }) =>
+      transferCargo(
+        bearerToken,
+        shipSymbol,
+        destShipSymbol,
+        cargoSymbol,
+        units,
+      ),
+    onSuccess: () => {
+      toast(`Transfered cargo from ${shipSymbol}.`);
+    },
+    onError: (e) => {
+      toast(e.toString());
+    },
+  });
+}
+
 export const globalQueryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error) => {

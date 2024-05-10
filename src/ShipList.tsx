@@ -8,6 +8,10 @@ import {
   CardActions,
   CardContent,
   CardHeader,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   LinearProgress,
   MenuItem,
   Select,
@@ -26,6 +30,7 @@ import {
   useMyShips,
   useNavigateMutation,
   useSwitchDockingMutation,
+  useTransferMutation,
 } from "./Api";
 import { z } from "zod";
 import { toast } from "react-toastify";
@@ -110,8 +115,8 @@ function ExtractButton(props: { ship: Ship }) {
 
 const checkOrX = (b: boolean) => (b ? "✅" : "❌");
 
-function ShipCard(props: { ship: Ship }) {
-  const { ship } = props;
+function ShipCard(props: { ship: Ship; startTransfer: (s: string) => void }) {
+  const { ship, startTransfer } = props;
 
   const { data: locationsData } = useHQLocations();
   const navLocations = locationsData || [];
@@ -182,6 +187,9 @@ function ShipCard(props: { ship: Ship }) {
           (Fuel: {ship.fuel.current}/{ship.fuel.capacity})
         </Typography>
         <div>
+          <Button onClick={() => startTransfer(ship.symbol)}>
+            Open Transfer Dialog
+          </Button>
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMore />}>
               Cargo: {ship.cargo.units}/{ship.cargo.capacity}
@@ -271,15 +279,91 @@ function ShipCard(props: { ship: Ship }) {
   );
 }
 
+function TransferDialog({
+  fromShipSymbol,
+  setFromShipSymbol,
+  shipList,
+}: {
+  fromShipSymbol: string;
+  setFromShipSymbol: (s: string) => void;
+  shipList: Ship[];
+}) {
+  const fromShip = shipList.find((ship) => ship.symbol === fromShipSymbol);
+  const tradeableShips = shipList.filter(
+    (ship) =>
+      ship.symbol !== fromShipSymbol &&
+      ship.nav.waypointSymbol === fromShip?.nav.waypointSymbol,
+  );
+
+  const [destShipSymbol, setDestShipSymbol] = useState("");
+  // const toShip = shipList.find((ship) => ship.symbol === toShipSymbol);
+  const { mutate: transferCargo } = useTransferMutation(fromShipSymbol);
+
+  // Maybe find a way to make this a 2-column transfer?
+  return (
+    <Dialog open={!!fromShipSymbol.length}>
+      <DialogTitle>Transfer from ship {fromShipSymbol}</DialogTitle>
+      <DialogContent>
+        Cargo: {fromShip?.cargo.units}/{fromShip?.cargo.capacity}
+        <div>
+          <Select
+            label="Destination"
+            value={destShipSymbol}
+            onChange={(event) => setDestShipSymbol(event.target.value)}
+          >
+            {tradeableShips.map((ship) => (
+              <MenuItem value={ship.symbol}>
+                {ship.symbol} ({ship.cargo.units}/{ship.cargo.capacity})
+              </MenuItem>
+            ))}
+          </Select>
+        </div>
+        {fromShip?.cargo.inventory.map((item) => (
+          <Stack direction="row">
+            <Typography>
+              {item.units} {item.name}
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={async () => {
+                transferCargo({
+                  destShipSymbol,
+                  cargoSymbol: item.symbol,
+                  units: item.units,
+                });
+              }}
+            >
+              Transfer
+            </Button>
+          </Stack>
+        ))}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setFromShipSymbol("")}>Close</Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
 function ShipList() {
   const { data } = useMyShips();
   const shipList = data?.data || [];
+  const [transferFromShipSymbol, setTransferFromShipSymbol] = useState("");
   return (
     <>
       <Typography variant="h2">Ship List!</Typography>
       {shipList.map((ship) => (
-        <ShipCard key={ship.symbol} ship={ship} />
+        <ShipCard
+          key={ship.symbol}
+          ship={ship}
+          startTransfer={setTransferFromShipSymbol}
+        />
       ))}
+      <TransferDialog
+        fromShipSymbol={transferFromShipSymbol}
+        setFromShipSymbol={setTransferFromShipSymbol}
+        shipList={shipList}
+      />
     </>
   );
 }
