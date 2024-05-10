@@ -57,11 +57,11 @@ import { useLocalStorage } from "./hooks/useLocalStorage";
 import { getSystemSymbol } from "./Util";
 import { scheduleUpdate } from "./Scheduler";
 
-type Agent = z.infer<typeof schemas.Agent>;
-// type Ship = z.infer<typeof schemas.Ship>;
+export type Agent = z.infer<typeof schemas.Agent>;
+export type Ship = z.infer<typeof schemas.Ship>;
 // type Meta = z.infer<typeof schemas.Meta>;
 // type Waypoint = z.infer<typeof schemas.Waypoint>;
-type TradeSymbol = z.infer<typeof schemas.TradeSymbol>;
+export type TradeSymbol = z.infer<typeof schemas.TradeSymbol>;
 
 const noDataAgent: Agent = {
   symbol: "",
@@ -540,6 +540,124 @@ export function useDeliverContractMutation(contractId: string) {
       ),
     onSuccess: () => {
       toast(`Delivered cargo for contract ${contractId}.`);
+    },
+    onError: (e) => {
+      toast(e.toString());
+    },
+  });
+}
+
+async function getMarketDetails(bearerToken: string, waypointSymbol: string) {
+  const options = {
+    headers: {
+      Authorization: `Bearer ${bearerToken}`,
+    },
+    params: {
+      systemSymbol: getSystemSymbol(waypointSymbol),
+      waypointSymbol,
+    },
+  };
+  const response = await api["get-market"](options);
+  return response.data;
+}
+
+export function useMarketDetails(waypointSymbol: string) {
+  const [bearerToken] = useLocalStorage("bearerToken", "");
+  return useQuery({
+    queryKey: ["get-market", waypointSymbol],
+    queryFn: () => getMarketDetails(bearerToken, waypointSymbol),
+    enabled: !!bearerToken && !!waypointSymbol,
+    retry: false,
+    // Make this function never re-fetch
+    // staleTime: Infinity,
+  });
+}
+
+async function buyGood(
+  bearerToken: string,
+  shipSymbol: string,
+  tradeSymbol: TradeSymbol,
+  units: number,
+) {
+  const body = {
+    symbol: tradeSymbol,
+    units,
+  };
+  const options = {
+    headers: {
+      Authorization: `Bearer ${bearerToken}`,
+    },
+    params: {
+      shipSymbol,
+    },
+  };
+  const response = await api["purchase-cargo"](body, options);
+  globalQueryClient.invalidateQueries({ queryKey: ["get-my-ships"] });
+  globalQueryClient.invalidateQueries({ queryKey: ["get-my-agent"] });
+  return response;
+}
+
+export function useBuyGoodMutation() {
+  const [bearerToken] = useLocalStorage("bearerToken", "");
+  return useMutation({
+    mutationKey: ["purchase-cargo"],
+    mutationFn: ({
+      shipSymbol,
+      cargoSymbol,
+      units,
+    }: {
+      shipSymbol: string;
+      cargoSymbol: TradeSymbol;
+      units: number;
+    }) => buyGood(bearerToken, shipSymbol, cargoSymbol, units),
+    onSuccess: (_data, vars) => {
+      toast(`Bought ${vars.cargoSymbol}.`);
+    },
+    onError: (e) => {
+      toast(e.toString());
+    },
+  });
+}
+
+async function sellGood(
+  bearerToken: string,
+  shipSymbol: string,
+  tradeSymbol: TradeSymbol,
+  units: number,
+) {
+  const body = {
+    symbol: tradeSymbol,
+    units,
+  };
+  const options = {
+    headers: {
+      Authorization: `Bearer ${bearerToken}`,
+    },
+    params: {
+      shipSymbol,
+    },
+  };
+  const response = await api["sell-cargo"](body, options);
+  globalQueryClient.invalidateQueries({ queryKey: ["get-my-ships"] });
+  globalQueryClient.invalidateQueries({ queryKey: ["get-my-agent"] });
+  return response;
+}
+
+export function useSellGoodMutation() {
+  const [bearerToken] = useLocalStorage("bearerToken", "");
+  return useMutation({
+    mutationKey: ["purchase-cargo"],
+    mutationFn: ({
+      shipSymbol,
+      cargoSymbol,
+      units,
+    }: {
+      shipSymbol: string;
+      cargoSymbol: TradeSymbol;
+      units: number;
+    }) => sellGood(bearerToken, shipSymbol, cargoSymbol, units),
+    onSuccess: (_data, vars) => {
+      toast(`Sold ${vars.cargoSymbol}.`);
     },
     onError: (e) => {
       toast(e.toString());

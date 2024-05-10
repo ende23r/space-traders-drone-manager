@@ -1,126 +1,88 @@
-import { Select, MenuItem, Typography, Paper, Container } from "@mui/material";
-import { useEffect, useState } from "react";
-import { getSystemSymbol } from "./Util";
-import { api, schemas } from "./packages/SpaceTradersAPI";
+import {
+  Button,
+  Stack,
+  Select,
+  MenuItem,
+  Typography,
+  Paper,
+  Container,
+} from "@mui/material";
+import { useState } from "react";
 import { z } from "zod";
-import { useLocalStorage } from "./hooks/useLocalStorage";
-import { useLocations, useMyAgent } from "./Api";
+
+import {
+  Ship,
+  useBuyGoodMutation,
+  useLocations,
+  useMarketDetails,
+  useMyAgent,
+  useMyShips,
+  useSellGoodMutation,
+} from "./Api";
+import { getSystemSymbol } from "./Util";
+
+import { schemas } from "./packages/SpaceTradersAPI";
 
 type Market = z.infer<typeof schemas.Market>;
-// type MarketTradeGood = z.infer<typeof schemas.MarketTradeGood>;
+type MarketTradeGood = z.infer<typeof schemas.MarketTradeGood>;
 // type TradeSymbol = z.infer<typeof schemas.TradeSymbol>;
 
-async function getMarketDetails(bearerToken: string, waypointSymbol: string) {
-  const options = {
-    headers: {
-      Authorization: `Bearer ${bearerToken}`,
-    },
-    params: {
-      systemSymbol: getSystemSymbol(waypointSymbol),
-      waypointSymbol,
-    },
-  };
-  const response = await api["get-market"](options);
-  return response.data;
+function TradeGood(props: { tradeGood: MarketTradeGood; ship: Ship }) {
+  const { tradeGood, ship } = props;
+  const { mutate: buyGood } = useBuyGoodMutation();
+  const { mutate: sellGood } = useSellGoodMutation();
+
+  return (
+    <Stack direction="row">
+      <Typography>
+        {tradeGood.symbol} ({tradeGood.type})
+      </Typography>
+      <Typography>Buy Price: {tradeGood.purchasePrice}</Typography>
+      <Button
+        disabled={ship.nav.status !== "DOCKED"}
+        onClick={() => {
+          buyGood({
+            shipSymbol: ship.symbol,
+            cargoSymbol: tradeGood.symbol,
+            units: 1,
+          });
+        }}
+      >
+        Buy 1
+      </Button>
+      <Typography>Sell Price: {tradeGood.sellPrice}</Typography>
+      <Button
+        disabled={ship.nav.status !== "DOCKED"}
+        onClick={() => {
+          sellGood({
+            shipSymbol: ship.symbol,
+            cargoSymbol: tradeGood.symbol,
+            units: 1,
+          });
+        }}
+      >
+        Sell 1
+      </Button>
+    </Stack>
+  );
 }
-
-/*
-async function buyGood(bearerToken: string, shipSymbol: string, tradeSymbol: TradeSymbol, units: number) {
-  const body = {
-    symbol: tradeSymbol,  units
-  }
-  const options = {
-    headers: {
-      Authorization: `Bearer ${bearerToken}`
-    },
-    params: {
-      shipSymbol
-    }
-  }
-  const response = await api["purchase-cargo"](body, options)
-  return response;
-}
-
-async function sellGood(bearerToken: string, shipSymbol: string, tradeSymbol: TradeSymbol, units: number) {
-  const body = {
-    symbol: tradeSymbol,  units
-  }
-  const options = {
-    headers: {
-      Authorization: `Bearer ${bearerToken}`
-    },
-    params: {
-      shipSymbol
-    }
-  }
-  const response = await api["sell-cargo"](body, options)
-  return response;
-}
-*/
-
-/*
-function TradeGood(props: {tradeGood: MarketTradeGood, shipSymbol: string}) {
-  const { tradeGood, shipSymbol } = props;
-  const [bearerToken] = useLocalStorage("bearerToken", "");
-
-  const buyQuantityRef = useRef({value: "1"});
-  const sellQuantityRef = useRef({value: "1"});
-  
-  return <Container>
-      <Typography>{tradeGood.symbol} ({tradeGood.type})</Typography>
-    <Typography>Buy Price: {tradeGood.purchasePrice}</Typography>
-    <Button
-      onClick={() => {
-        if(!buyQuantityRef.current) { return; }
-        buyGood(bearerToken, shipSymbol, tradeGood.symbol, 1)
-      }}
-      >Buy</Button>
-    <TextField
-      id="outlined-number"
-      label="Buy Quantity"
-      type="number"
-      inputRef={buyQuantityRef}
-      defaultValue={1}
-      InputLabelProps={{
-        shrink: true,
-      }}
-    />
-    <Typography>Sell Price: {tradeGood.sellPrice}</Typography>
-    <Button
-      onClick={() => {
-        if(!sellQuantityRef.current) {
-          return;
-        }
-        sellGood(bearerToken, shipSymbol, tradeGood.symbol, parseInt(sellQuantityRef.current.value, 10))
-      }}
-      >Sell</Button>
-    <TextField
-      id="outlined-number"
-      label="Sell Quantity"
-      type="number"
-      inputRef={sellQuantityRef}
-      defaultValue={1}
-      InputLabelProps={{
-        shrink: true,
-      }}
-    />
-    </Container>;  
-}*/
 
 function Market(props: { waypointSymbol: string }) {
   const { waypointSymbol } = props;
-  const [bearerToken] = useLocalStorage("bearerToken", "");
 
-  const [marketData, setMarketData] = useState<Market>();
+  const { data: marketData } = useMarketDetails(waypointSymbol);
+  const { data: shipData } = useMyShips();
+  const shipList = shipData?.data || [];
+  const tradeShips = shipList.filter(
+    (ship) => ship.nav.waypointSymbol === waypointSymbol,
+  );
 
-  useEffect(() => {
-    const pollMarket = async () => {
-      if (waypointSymbol) {
-        setMarketData(await getMarketDetails(bearerToken, waypointSymbol));
-      }
-    };
-    pollMarket();
-  }, [bearerToken, waypointSymbol, setMarketData]);
+  const [selectedShipSymbol, setSelectedShipSymbol] = useState(
+    tradeShips[0]?.symbol || "",
+  );
+  const selectedShip = shipList.find(
+    (ship) => ship.symbol === selectedShipSymbol,
+  );
 
   if (!marketData) {
     return (
@@ -131,12 +93,13 @@ function Market(props: { waypointSymbol: string }) {
   }
 
   let tradeGoodsContainer;
-  if (marketData.tradeGoods) {
+  if (marketData.tradeGoods && selectedShip) {
     tradeGoodsContainer = (
       <Container>
         <Typography variant="h4">TradeGoods</Typography>
-        {JSON.stringify(marketData.tradeGoods)}
-        {/*marketData.tradeGoods.map((tradeGood) => <TradeGood tradeGood={tradeGood} shipSymbol={shipSymbol} />)*/}
+        {marketData.tradeGoods.map((tradeGood) => (
+          <TradeGood tradeGood={tradeGood} ship={selectedShip} />
+        ))}
       </Container>
     );
   }
@@ -145,10 +108,19 @@ function Market(props: { waypointSymbol: string }) {
     <Paper>
       <Typography variant="h3">Market {marketData.symbol}</Typography>
       <Container>
+        <Select
+          label="Selected Trade Ship"
+          value={selectedShipSymbol}
+          onChange={(event) => setSelectedShipSymbol(event.target.value)}
+        >
+          {tradeShips.map((ship) => (
+            <MenuItem value={ship.symbol}>{ship.symbol}</MenuItem>
+          ))}
+        </Select>
         <Typography variant="h4">Imports</Typography>
-        {marketData.imports.map((impor) => impor.symbol)}
+        {marketData.imports.map((impor) => impor.symbol).join(", ")}
         <Typography variant="h4">Exports</Typography>
-        {marketData.exports.map((expor) => expor.symbol)}
+        {marketData.exports.map((expor) => expor.symbol).join(", ")}
       </Container>
       {tradeGoodsContainer}
     </Paper>
@@ -156,7 +128,6 @@ function Market(props: { waypointSymbol: string }) {
 }
 
 function TradeScreen() {
-  // const {data: shipData} = useMyShips();
   // const shipList = shipData?.data || [];
   const { agent } = useMyAgent();
   const systemSymbol = getSystemSymbol(agent.headquarters || "");

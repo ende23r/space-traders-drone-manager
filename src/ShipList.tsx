@@ -102,15 +102,17 @@ function ExtractButton(props: { ship: Ship }) {
 
   return (
     <Tooltip title={disabledTooltip}>
-      <Button
-        disabled={extractionDisabled}
-        onClick={async () => {
-          triggerExtract();
-        }}
-      >
-        Extract{" "}
-        {ship.cooldown.remainingSeconds > 0 ? `(${remainingSecs} s)` : ""}
-      </Button>
+      <span>
+        <Button
+          disabled={extractionDisabled}
+          onClick={async () => {
+            triggerExtract();
+          }}
+        >
+          Extract{" "}
+          {ship.cooldown.remainingSeconds > 0 ? `(${remainingSecs} s)` : ""}
+        </Button>
+      </span>
     </Tooltip>
   );
 }
