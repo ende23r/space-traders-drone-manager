@@ -3,14 +3,19 @@ import { useLocations, useMyAgent } from "./Api";
 import { getSystemSymbol } from "./Util";
 
 const scale = 2.5;
+const totalWidth = 1600 / scale;
+const totalHeight = 1600 / scale;
 function StarBox({ star }: { star: any }) {
   return (
-    <Tooltip title={star.symbol} followCursor={true}>
+    <Tooltip
+      title={`${star.symbol} (${star.x}, ${star.y})`}
+      followCursor={true}
+    >
       <Box
         sx={{
           position: "absolute",
-          top: (star.x + 800) / scale,
-          left: (star.y + 800) / scale,
+          left: (star.x + 800) / scale,
+          top: totalHeight - (star.y + 800) / scale,
           width: 7,
           height: 7,
           background: "white",
@@ -28,8 +33,8 @@ export default function StarMap() {
   return (
     <Box
       sx={{
-        width: 1600 / scale,
-        height: 1600 / scale,
+        width: totalWidth,
+        height: totalHeight,
         flexShrink: 0,
         background: "black",
         position: "relative",
