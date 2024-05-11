@@ -32,38 +32,61 @@ function TradeGood(props: { tradeGood: MarketTradeGood; ship: Ship }) {
   const { mutate: buyGood } = useBuyGoodMutation();
   const { mutate: sellGood } = useSellGoodMutation();
 
+  const shipStock =
+    ship.cargo.inventory.find((item) => item.symbol === tradeGood.symbol)
+      ?.units || 0;
+
   return (
-    <Stack direction="row">
+    <>
       <Typography>
         {tradeGood.symbol} ({tradeGood.type})
       </Typography>
-      <Typography>Buy Price: {tradeGood.purchasePrice}</Typography>
-      <Button
-        disabled={ship.nav.status !== "DOCKED"}
-        onClick={() => {
-          buyGood({
-            shipSymbol: ship.symbol,
-            cargoSymbol: tradeGood.symbol,
-            units: 1,
-          });
-        }}
-      >
-        Buy 1
-      </Button>
-      <Typography>Sell Price: {tradeGood.sellPrice}</Typography>
-      <Button
-        disabled={ship.nav.status !== "DOCKED"}
-        onClick={() => {
-          sellGood({
-            shipSymbol: ship.symbol,
-            cargoSymbol: tradeGood.symbol,
-            units: 1,
-          });
-        }}
-      >
-        Sell 1
-      </Button>
-    </Stack>
+      <Stack direction="row">
+        <Typography>Buy Price: {tradeGood.purchasePrice}</Typography>
+        <Button
+          disabled={
+            ship.nav.status !== "DOCKED" ||
+            ship.cargo.units === ship.cargo.capacity
+          }
+          onClick={() => {
+            buyGood({
+              shipSymbol: ship.symbol,
+              cargoSymbol: tradeGood.symbol,
+              units: 1,
+            });
+          }}
+        >
+          Buy 1
+        </Button>
+      </Stack>
+      <Stack direction="row">
+        <Typography>Sell Price: {tradeGood.sellPrice}</Typography>
+        <Button
+          disabled={ship.nav.status !== "DOCKED" || shipStock === 0}
+          onClick={() => {
+            sellGood({
+              shipSymbol: ship.symbol,
+              cargoSymbol: tradeGood.symbol,
+              units: 1,
+            });
+          }}
+        >
+          Sell 1
+        </Button>
+        <Button
+          disabled={ship.nav.status !== "DOCKED" || shipStock === 0}
+          onClick={() => {
+            sellGood({
+              shipSymbol: ship.symbol,
+              cargoSymbol: tradeGood.symbol,
+              units: shipStock,
+            });
+          }}
+        >
+          Sell All
+        </Button>
+      </Stack>
+    </>
   );
 }
 
