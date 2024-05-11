@@ -12,6 +12,7 @@ import {
   CardContent,
   CardActions,
   Typography,
+  Tooltip,
 } from "@mui/material";
 import { createContext, useEffect, useState } from "react";
 import ShipyardList from "./ShipyardList";
@@ -20,7 +21,7 @@ import TradeScreen from "./TradeScreen";
 
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.min.css";
-import { globalQueryClient, useMyAgent } from "./Api";
+import { globalQueryClient, useLocations, useMyAgent } from "./Api";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { getSystemSymbol } from "./Util";
@@ -129,6 +130,43 @@ function DateContextWrapper(props: { children: any }) {
   );
 }
 
+function StarBox({ star }: { star: any }) {
+  return (
+    <Tooltip title={star.symbol} followCursor={true}>
+      <Box
+        sx={{
+          position: "absolute",
+          top: star.x / 2 + 400,
+          left: star.y / 2 + 400,
+          width: 8,
+          height: 8,
+          background: "white",
+        }}
+      />
+    </Tooltip>
+  );
+}
+
+function StarMap() {
+  const { agent } = useMyAgent();
+  const systemSymbol = getSystemSymbol(agent.headquarters || "");
+  const { data: stars } = useLocations(systemSymbol);
+  // To represent a grid that goes from approx -800 to 800, we divide all positions by 2.
+  return (
+    <Box
+      sx={{
+        width: 800,
+        height: 800,
+        "flex-shrink": 0,
+        background: "black",
+        position: "relative",
+      }}
+    >
+      {stars?.map((star) => <StarBox star={star} />)}
+    </Box>
+  );
+}
+
 function App() {
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
 
@@ -152,26 +190,25 @@ function App() {
             manuallyOpen={authDialogOpen}
             setManuallyOpen={(open) => setAuthDialogOpen(open)}
           />
-          <div>
-            <Grid container spacing={1}>
-              <Grid xs={10}>
-                <AgentCard />
-              </Grid>
-              <Grid xs={2}>
-                <Button onClick={() => setAuthDialogOpen(true)}>
-                  Change login
-                </Button>
-              </Grid>
-              <Grid xs={12} md={6}>
-                <div>
-                  <ShipList />
-                </div>
-              </Grid>
-              <Grid xs={12} md={6}>
-                <InfoTabs />
-              </Grid>
+          <Grid container spacing={1}>
+            <StarMap />
+            <Grid xs={10}>
+              <AgentCard />
             </Grid>
-          </div>
+            <Grid xs={2}>
+              <Button onClick={() => setAuthDialogOpen(true)}>
+                Change login
+              </Button>
+            </Grid>
+            <Grid xs={12} md={6}>
+              <div>
+                <ShipList />
+              </div>
+            </Grid>
+            <Grid xs={12} md={6}>
+              <InfoTabs />
+            </Grid>
+          </Grid>
           <ReactQueryDevtools initialIsOpen={false} />
         </DateContextWrapper>
       </QueryClientProvider>
