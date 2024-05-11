@@ -12,6 +12,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
   LinearProgress,
   MenuItem,
   Select,
@@ -71,18 +72,31 @@ function TimedProgress(props: {
   return <LinearProgress variant="determinate" value={progress} />;
 }
 
-function ExtractButton(props: { ship: Ship }) {
-  const { ship } = props;
-
+function ExtractButton({
+  ship,
+  mineUntilFull,
+}: {
+  ship: Ship;
+  mineUntilFull: boolean;
+}) {
   const date = useContext(DateContext);
-  const { mutate: triggerExtract, data } = useExtractMutation(ship.symbol);
+  const {
+    mutate: triggerExtract,
+    data,
+    status,
+  } = useExtractMutation(ship.symbol);
 
   const inOrbit = ship.nav.status === "IN_ORBIT";
   const validMiningLocation = validMiningWaypointTypes.includes(
     ship.nav.route.destination.type,
   );
   const onCooldown = ship.cooldown.remainingSeconds > 0;
-  const extractionDisabled = !inOrbit || !validMiningLocation || onCooldown;
+  const extractionDisabled =
+    !inOrbit ||
+    !validMiningLocation ||
+    onCooldown ||
+    // If we're already mining, might as well disable this so we don't double-send requests.
+    mineUntilFull;
   const disabledTooltip = (
     <div>
       1. In Orbit {checkOrX(inOrbit)}
@@ -99,6 +113,15 @@ function ExtractButton(props: { ship: Ship }) {
   const remainingSecs = Math.floor(
     Math.max(endTimestamp - date.getTime(), 0) / 1000,
   );
+
+  if (
+    mineUntilFull &&
+    remainingSecs <= 0 &&
+    ship.cargo.units < ship.cargo.capacity &&
+    status !== "pending"
+  ) {
+    triggerExtract();
+  }
 
   return (
     <Tooltip title={disabledTooltip}>
@@ -185,6 +208,8 @@ function ShipCard(props: { ship: Ship; startTransfer: (s: string) => void }) {
   );
 
   const inTransit = ship.nav.status === "IN_TRANSIT";
+
+  const [mineUntilFull, setMineUntilFull] = useState(false);
 
   return (
     <Card variant="outlined">
@@ -287,7 +312,16 @@ function ShipCard(props: { ship: Ship; startTransfer: (s: string) => void }) {
             </Button>
           </span>
         </Tooltip>
-        <ExtractButton ship={ship} />
+        <FormControlLabel
+          control={
+            <Switch
+              value={mineUntilFull}
+              onChange={(event) => setMineUntilFull(event.target.checked)}
+            />
+          }
+          label="Mine Until Full?"
+        />
+        <ExtractButton ship={ship} mineUntilFull={mineUntilFull} />
         <Tooltip title={fuellingTooltip}>
           <span>
             <Button disabled={fuellingDisabled} onClick={() => fuelShip()}>
