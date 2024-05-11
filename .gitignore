@@ -25,3 +25,6 @@ dist-ssr
 
 # Client setup script
 generate-client.sh
+
+# Generated node script files
+scripts/*.js
