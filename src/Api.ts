@@ -644,6 +644,40 @@ export function useSellGoodMutation() {
   });
 }
 
+type ShipType = z.infer<typeof schemas.ShipType>;
+
+async function purchaseShip(
+  bearerToken: string,
+  shipType: ShipType,
+  waypointSymbol: string,
+) {
+  const body = { shipType, waypointSymbol };
+  const options = {
+    headers: {
+      Authorization: `Bearer ${bearerToken}`,
+    },
+  };
+  const response = await api["purchase-ship"](body, options);
+  globalQueryClient.invalidateQueries({ queryKey: ["get-my-ships"] });
+  globalQueryClient.invalidateQueries({ queryKey: ["get-my-agent"] });
+  return response.data;
+}
+
+export function usePurchaseShipMutation(
+  waypointSymbol: string,
+  shipType: ShipType,
+) {
+  const [bearerToken] = useLocalStorage("bearerToken", "");
+  return useMutation({
+    mutationKey: ["purchase-ship", waypointSymbol, shipType],
+    mutationFn: () => purchaseShip(bearerToken, shipType, waypointSymbol),
+    onSuccess: () => {
+      toast(`Purchased ${shipType}.`);
+    },
+    onError: handleAxiosError,
+  });
+}
+
 export const globalQueryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error) => {

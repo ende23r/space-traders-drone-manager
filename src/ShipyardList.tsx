@@ -1,52 +1,46 @@
 import { useEffect, useState } from "react";
 import { api, schemas } from "./packages/SpaceTradersAPI";
-import { Button, Card, MenuItem, Select, Typography } from "@mui/material";
+import {
+  Button,
+  Card,
+  CardActions,
+  CardContent,
+  CardHeader,
+  MenuItem,
+  Select,
+  Typography,
+} from "@mui/material";
 import { z } from "zod";
 import { getSystemSymbol } from "./Util";
-import { useLocations } from "./Api";
+import { useLocations, usePurchaseShipMutation } from "./Api";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 
 type Shipyard = z.infer<typeof schemas.Shipyard>;
 type ShipyardShip = z.infer<typeof schemas.ShipyardShip>;
-type ShipType = z.infer<typeof schemas.ShipType>;
-
-// TODO: make this invalidate state of agents and ships
-async function purchaseShip(
-  bearerToken: string,
-  shipType: ShipType,
-  waypointSymbol: string,
-) {
-  const body = { shipType, waypointSymbol };
-  const options = {
-    headers: {
-      Authorization: `Bearer ${bearerToken}`,
-    },
-  };
-  const response = await api["purchase-ship"](body, options);
-  return response.data;
-}
 
 function ShipPurchaseOption(props: {
   data: ShipyardShip;
   waypointSymbol: string;
 }) {
-  const [bearerToken] = useLocalStorage("bearerToken", "");
   const { data, waypointSymbol } = props;
+  const { mutate: purchaseShip } = usePurchaseShipMutation(
+    waypointSymbol,
+    data.type,
+  );
   return (
     <Card>
-      <Typography>
-        {data.name}
-        <Button
-          variant="contained"
-          onClick={() => purchaseShip(bearerToken, data.type, waypointSymbol)}
-        >
+      <CardHeader title={data.name} />
+      <CardContent>
+        <Typography>Price: {data.purchasePrice}</Typography>
+        <Typography>
+          Crew: {data.crew.required}/{data.crew.capacity}
+        </Typography>
+      </CardContent>
+      <CardActions>
+        <Button variant="contained" onClick={() => purchaseShip()}>
           Purchase
         </Button>
-      </Typography>
-      <Typography>Price: {data.purchasePrice}</Typography>
-      <Typography>
-        Crew: {data.crew.required}/{data.crew.capacity}
-      </Typography>
+      </CardActions>
     </Card>
   );
 }
