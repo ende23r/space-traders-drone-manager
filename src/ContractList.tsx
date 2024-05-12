@@ -38,7 +38,7 @@ const nullContract: Contract = {
 
 function ContractCard() {
   const { data } = useContracts();
-  const contract: Contract = data?.data[0] || nullContract;
+  const contract: Contract = data?.data.at(-1) || nullContract;
 
   const { agent } = useMyAgent();
   const { data: shipData } = useMyShips();
