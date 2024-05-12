@@ -1,11 +1,17 @@
 import { useEffect, useState } from "react";
 import { api, schemas } from "./packages/SpaceTradersAPI";
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Button,
   Card,
   CardActions,
   CardContent,
   CardHeader,
+  List,
+  ListItem,
+  ListItemText,
   MenuItem,
   Select,
   Typography,
@@ -14,6 +20,7 @@ import { z } from "zod";
 import { getSystemSymbol } from "./Util";
 import { useLocations, usePurchaseShipMutation } from "./Api";
 import { useLocalStorage } from "./hooks/useLocalStorage";
+import { ExpandMore } from "@mui/icons-material";
 
 type Shipyard = z.infer<typeof schemas.Shipyard>;
 type ShipyardShip = z.infer<typeof schemas.ShipyardShip>;
@@ -35,6 +42,19 @@ function ShipPurchaseOption(props: {
         <Typography>
           Crew: {data.crew.required}/{data.crew.capacity}
         </Typography>
+        <Typography>
+          Fuel Capacity: {data.frame.fuelCapacity}
+        </Typography>
+        <Accordion>
+          <AccordionSummary expandIcon={<ExpandMore />}>
+            Mounts ({data.mounts.length})
+          </AccordionSummary>
+          <AccordionDetails>
+            <List>
+              {data.mounts.map((mount) => <ListItem><ListItemText primary={mount.symbol} /></ListItem>)}
+            </List>
+          </AccordionDetails>
+        </Accordion>
       </CardContent>
       <CardActions>
         <Button variant="contained" onClick={() => purchaseShip()}>
@@ -57,8 +77,8 @@ function ShipSaleList(props: { data: Shipyard | undefined }) {
       {/*<Typography>{data.shipTypes.map((shipType) => shipType.type)}</Typography>*/}
       {data.ships
         ? data.ships.map((ship) => (
-            <ShipPurchaseOption data={ship} waypointSymbol={data.symbol} />
-          ))
+          <ShipPurchaseOption data={ship} waypointSymbol={data.symbol} />
+        ))
         : null}
     </Card>
   );

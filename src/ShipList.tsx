@@ -4,6 +4,7 @@ import {
   AccordionDetails,
   AccordionSummary,
   Button,
+  ButtonGroup,
   Card,
   CardActions,
   CardContent,
@@ -14,6 +15,9 @@ import {
   DialogTitle,
   FormControlLabel,
   LinearProgress,
+  List,
+  ListItem,
+  ListItemText,
   MenuItem,
   Select,
   Stack,
@@ -48,7 +52,7 @@ function computeDistance(shipNav: ShipNav, destinationNav: Waypoint) {
   const originNav = shipNav.route.destination;
   const distance = Math.sqrt(
     Math.pow(destinationNav.x - originNav.x, 2) +
-      Math.pow(destinationNav.y - originNav.y, 2),
+    Math.pow(destinationNav.y - originNav.y, 2),
   );
   return distance;
 }
@@ -74,11 +78,11 @@ function TimedProgress(props: {
 
 function ExtractButton({
   ship,
-  mineUntilFull,
 }: {
   ship: Ship;
-  mineUntilFull: boolean;
 }) {
+  const [mineUntilFull, setMineUntilFull] = useState(false);
+
   const date = useContext(DateContext);
   const {
     mutate: triggerExtract,
@@ -90,20 +94,28 @@ function ExtractButton({
   const validMiningLocation = validMiningWaypointTypes.includes(
     ship.nav.route.destination.type,
   );
+  const knownMiningLasers = [
+    "MOUNT_MINING_LASER_I",
+    "MOUNT_MINING_LASER_II",
+    "MOUNT_MINING_LASER_III",
+  ]
+  const hasMiningLaser = !!ship.mounts.find((mount) => knownMiningLasers.includes(mount.symbol))
   const onCooldown = ship.cooldown.remainingSeconds > 0;
   const extractionDisabled =
     !inOrbit ||
     !validMiningLocation ||
-    onCooldown ||
-    // If we're already mining, might as well disable this so we don't double-send requests.
-    mineUntilFull;
+    !hasMiningLaser
+  const extractionButtonDisabled = extractionDisabled ||
+    onCooldown;
   const disabledTooltip = (
     <div>
       1. In Orbit {checkOrX(inOrbit)}
       <br />
       2. At Asteroid {checkOrX(validMiningLocation)}
       <br />
-      3. Not on cooldown {checkOrX(!onCooldown)}
+      3. Has Mining Laser {checkOrX(hasMiningLaser)}
+      <br />
+      4. Not on cooldown {checkOrX(!onCooldown)}
     </div>
   );
 
@@ -114,29 +126,48 @@ function ExtractButton({
     Math.max(endTimestamp - date.getTime(), 0) / 1000,
   );
 
+  if (extractionDisabled && mineUntilFull) {
+    setMineUntilFull(false);
+  }
+
   if (
     mineUntilFull &&
-    remainingSecs <= 0 &&
+    !extractionButtonDisabled &&
+    remainingSecs === 0 &&
     ship.cargo.units < ship.cargo.capacity &&
-    status !== "pending"
+    status !== "pending" && status !== "error"
   ) {
     triggerExtract();
   }
 
   return (
-    <Tooltip title={disabledTooltip}>
-      <span>
-        <Button
-          disabled={extractionDisabled}
-          onClick={async () => {
-            triggerExtract();
-          }}
-        >
-          Extract{" "}
-          {ship.cooldown.remainingSeconds > 0 ? `(${remainingSecs} s)` : ""}
-        </Button>
-      </span>
-    </Tooltip>
+    <ButtonGroup>
+      <FormControlLabel
+        control={
+          <Switch
+            checked={mineUntilFull
+            }
+            disabled={extractionDisabled}
+            onChange={(event) => setMineUntilFull(event.target.checked)}
+          />
+        }
+        label="Mine Until Full?"
+      />
+      <Tooltip title={disabledTooltip}>
+        <span>
+          <Button
+            disabled={extractionButtonDisabled
+            }
+            onClick={async () => {
+              triggerExtract();
+            }}
+          >
+            Extract{" "}
+            {ship.cooldown.remainingSeconds > 0 ? `(${remainingSecs} s)` : ""}
+          </Button>
+        </span>
+      </Tooltip>
+    </ButtonGroup>
   );
 }
 
@@ -209,8 +240,6 @@ function ShipCard(props: { ship: Ship; startTransfer: (s: string) => void }) {
 
   const inTransit = ship.nav.status === "IN_TRANSIT";
 
-  const [mineUntilFull, setMineUntilFull] = useState(false);
-
   return (
     <Card variant="outlined">
       <CardHeader
@@ -221,6 +250,16 @@ function ShipCard(props: { ship: Ship; startTransfer: (s: string) => void }) {
         <Typography>
           (Fuel: {ship.fuel.current}/{ship.fuel.capacity})
         </Typography>
+        <Accordion>
+          <AccordionSummary expandIcon={<ExpandMore />}>
+            Mounts ({ship.mounts.length})
+          </AccordionSummary>
+          <AccordionDetails>
+            <List>
+              {ship.mounts.map((mount) => <ListItem><ListItemText primary={mount.symbol} /></ListItem>)}
+            </List>
+          </AccordionDetails>
+        </Accordion>
         <div>
           <Button onClick={() => startTransfer(ship.symbol)}>
             Open Transfer Dialog
@@ -312,16 +351,7 @@ function ShipCard(props: { ship: Ship; startTransfer: (s: string) => void }) {
             </Button>
           </span>
         </Tooltip>
-        <FormControlLabel
-          control={
-            <Switch
-              value={mineUntilFull}
-              onChange={(event) => setMineUntilFull(event.target.checked)}
-            />
-          }
-          label="Mine Until Full?"
-        />
-        <ExtractButton ship={ship} mineUntilFull={mineUntilFull} />
+        <ExtractButton ship={ship} />
         <Tooltip title={fuellingTooltip}>
           <span>
             <Button disabled={fuellingDisabled} onClick={() => fuelShip()}>
