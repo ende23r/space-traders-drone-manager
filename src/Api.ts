@@ -678,6 +678,26 @@ export function usePurchaseShipMutation(
   });
 }
 
+async function fulfillContract(bearerToken: string, contractId: string) {
+  const options = {
+    headers: bearerPostHeaders(bearerToken),
+    params: { contractId },
+  };
+  const response = await api["fulfill-contract"](undefined, options);
+  globalQueryClient.invalidateQueries({ queryKey: ["get-contract"] });
+  globalQueryClient.invalidateQueries({ queryKey: ["get-my-agent"] });
+  return response.data;
+}
+
+export function useFulfillContractMutation(contractId: string) {
+  const [bearerToken] = useLocalStorage("bearerToken", "");
+  return useMutation({
+    mutationKey: ["fulfill-contract", contractId],
+    mutationFn: () => fulfillContract(bearerToken, contractId),
+    onError: handleAxiosError,
+  });
+}
+
 export const globalQueryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error) => {

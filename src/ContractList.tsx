@@ -11,6 +11,7 @@ import {
 import {
   useAcceptContractMutation,
   useContracts,
+  useFulfillContractMutation,
   useMyAgent,
   useMyShips,
   useNegotiateContractMutation,
@@ -52,6 +53,10 @@ function ContractCard() {
     contract.id,
   );
   const { mutate: triggerNegotiateContract } = useNegotiateContractMutation();
+  const { mutate: triggerFulfillContract } = useFulfillContractMutation(
+    contract.id,
+  );
+
   return (
     <Card>
       <CardHeader
@@ -67,13 +72,17 @@ function ContractCard() {
           )}
         </Typography>
         <Typography>
-          Payment On Acceptance: {contract.terms.payment.onAccepted} On
-          Completion: {contract.terms.payment.onFulfilled}
+          Payment On Acceptance: {contract.terms.payment.onAccepted}{" "}
+        </Typography>
+        <Typography>
+          On Completion: {contract.terms.payment.onFulfilled}
         </Typography>
         <Typography>
           {!contract.accepted
             ? `Deadline to accept: ${contract.deadlineToAccept}`
-            : "Accepted!"}
+            : !contract.fulfilled
+              ? "Accepted!"
+              : "Fulfilled!"}
         </Typography>
       </CardContent>
       <CardActions>
@@ -83,8 +92,16 @@ function ContractCard() {
         >
           Accept
         </Button>
-        <Button disabled={true}>Decline</Button>
-        <Button disabled={true}>Cancel Active Contract</Button>
+        <Button
+          disabled={
+            contract.id === noContractSymbol ||
+            !contract.accepted ||
+            contract.fulfilled
+          }
+          onClick={() => triggerFulfillContract()}
+        >
+          Fulfill
+        </Button>
         <Button
           onClick={() =>
             triggerNegotiateContract({ shipSymbol: shipAtHQ?.symbol || "" })
