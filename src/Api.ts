@@ -126,7 +126,7 @@ export function useMyAgent() {
     // Make this function never re-fetch
     staleTime: Infinity,
   });
-  return { agent: data?.data || noDataAgent, ...metadata };
+  return { agent: data?.data || noDataAgent, bearerToken, ...metadata };
 }
 
 export function useContracts() {

@@ -42,7 +42,7 @@ function BearerAuthDialog(props: {
   setManuallyOpen: (a: boolean) => void;
 }) {
   const { manuallyOpen, setManuallyOpen } = props;
-  const { agent } = useMyAgent();
+  const { agent, bearerToken: lastFetchedToken, status } = useMyAgent();
   const defaultAgentSymbol = agent.symbol || "";
 
   const [bearerToken, setBearerToken] = useLocalStorage("bearerToken", "");
@@ -50,6 +50,11 @@ function BearerAuthDialog(props: {
   const [faction, setFaction] = useState<FactionSymbol>("COSMIC");
 
   const { mutate: registerAsAgent } = useRegisterWithFaction();
+
+  if (status === "success" && lastFetchedToken !== bearerToken) {
+    window.location.reload();
+  }
+
   return (
     <Dialog open={!bearerToken || manuallyOpen}>
       <DialogTitle>Register Agent</DialogTitle>
@@ -67,7 +72,6 @@ function BearerAuthDialog(props: {
             variant="contained"
             onClick={() => {
               setBearerToken(bearerToken);
-              globalQueryClient.invalidateQueries();
             }}
           >
             Use Existing Bearer Token
