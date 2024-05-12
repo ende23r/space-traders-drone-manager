@@ -698,6 +698,49 @@ export function useFulfillContractMutation(contractId: string) {
   });
 }
 
+export type FactionSymbol = z.infer<typeof schemas.FactionSymbol>;
+export function useFactions() {
+  return useQuery({
+    queryKey: ["get-factions"],
+    queryFn: () => {
+      api["get-factions"];
+    },
+    retry: false,
+    // Make this function never re-fetch
+    staleTime: Infinity,
+  });
+}
+async function registerAgent(
+  agentSymbol: string,
+  faction: FactionSymbol,
+  registerTokenCallback: Function,
+) {
+  const body = {
+    symbol: agentSymbol,
+    faction,
+  };
+  const response = await api["register"](body);
+  globalQueryClient.invalidateQueries();
+  registerTokenCallback(response.data.token);
+  return response.data;
+}
+
+export function useRegisterWithFaction() {
+  return useMutation({
+    mutationKey: ["register"],
+    mutationFn: ({
+      agentSymbol,
+      faction,
+      callback,
+    }: {
+      agentSymbol: string;
+      faction: FactionSymbol;
+      callback: Function;
+    }) => registerAgent(agentSymbol, faction, callback),
+    onError: handleAxiosError,
+  });
+}
+
 export const globalQueryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error) => {

@@ -5,33 +5,37 @@ import {
   DialogContent,
   TextField,
   DialogActions,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import { useState } from "react";
 import { useLocalStorage } from "./hooks/useLocalStorage";
-import { useMyAgent, globalQueryClient } from "./Api";
+import { useMyAgent, globalQueryClient, useRegisterWithFaction } from "./Api";
+import { schemas } from "./packages/SpaceTradersAPI";
+import { z } from "zod";
 
-// API for requests with a BODY: function [alias](body: BodyParam, config?: ZodiosRequestOptions): Promise<Response>;
-
-async function generateBearerToken(playerSymbol: string, faction = "COSMIC") {
-  const options = {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      symbol: playerSymbol,
-      faction,
-    }),
-  };
-  const response = await fetch(
-    "https://api.spacetraders.io/v2/register",
-    options,
-  );
-  if (!response.ok) {
-    throw new Error(`${response.status}: ${response.statusText}`);
-  }
-  return await response.json();
-}
+type FactionSymbol = z.infer<typeof schemas.FactionSymbol>;
+const knownFactions: FactionSymbol[] = [
+  "COSMIC",
+  "VOID",
+  "GALACTIC",
+  "QUANTUM",
+  "DOMINION",
+  "ASTRO",
+  "CORSAIRS",
+  "OBSIDIAN",
+  "AEGIS",
+  "UNITED",
+  "SOLITARY",
+  "COBALT",
+  "OMEGA",
+  "ECHO",
+  "LORDS",
+  "CULT",
+  "ANCIENTS",
+  "SHADOW",
+  "ETHEREAL",
+];
 
 function BearerAuthDialog(props: {
   manuallyOpen: boolean;
@@ -40,8 +44,12 @@ function BearerAuthDialog(props: {
   const { manuallyOpen, setManuallyOpen } = props;
   const { agent } = useMyAgent();
   const defaultAgentSymbol = agent.symbol || "";
+
   const [bearerToken, setBearerToken] = useLocalStorage("bearerToken", "");
   const [agentSymbol, setAgentSymbol] = useState("");
+  const [faction, setFaction] = useState<FactionSymbol>("COSMIC");
+
+  const { mutate: registerAsAgent } = useRegisterWithFaction();
   return (
     <Dialog open={!bearerToken || manuallyOpen}>
       <DialogTitle>Register Agent</DialogTitle>
@@ -74,14 +82,26 @@ function BearerAuthDialog(props: {
               setAgentSymbol(e.target.value);
             }}
           />
+          <Select
+            label="Faction"
+            value={faction}
+            onChange={(event: any) => {
+              setFaction(event.target.value);
+            }}
+          >
+            {knownFactions.map((symbol) => (
+              <MenuItem value={symbol}>{symbol}</MenuItem>
+            ))}
+          </Select>
           <Button
             variant="contained"
-            onClick={async () => {
-              const data = await generateBearerToken(agentSymbol);
-              const { token } = data.data;
-              setBearerToken(token);
-              globalQueryClient.invalidateQueries();
-            }}
+            onClick={() =>
+              registerAsAgent({
+                agentSymbol,
+                faction,
+                callback: setBearerToken,
+              })
+            }
           >
             Create New Agent
           </Button>
