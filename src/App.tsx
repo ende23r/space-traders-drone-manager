@@ -15,6 +15,7 @@ import {
   AppBar,
   CssBaseline,
   Toolbar,
+  Stack,
 } from "@mui/material";
 import { createContext, useEffect, useState } from "react";
 import ShipyardList from "./ShipyardList";
@@ -23,7 +24,7 @@ import TradeScreen from "./TradeScreen";
 
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.min.css";
-import { globalQueryClient, useMyAgent } from "./Api";
+import { globalQueryClient, useMyAgent, useServerStatus } from "./Api";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { getSystemSymbol } from "./Util";
@@ -132,6 +133,27 @@ function DateContextWrapper(props: { children: any }) {
   );
 }
 
+function TopBar({ setAuthDialogOpen }: { setAuthDialogOpen: Function }) {
+  const { data } = useServerStatus();
+
+  return (
+    <AppBar position="static" sx={{ top: 0 }}>
+      <Toolbar>
+        <Stack sx={{ flexGrow: 1 }}>
+          <Typography variant="h4">Space Traders!</Typography>
+          <Typography variant="subtitle2">
+            Status: {data?.status} Server Version: {data?.version} Next Reset:{" "}
+            {data?.resetDate}{" "}
+          </Typography>
+        </Stack>
+        <Button onClick={() => setAuthDialogOpen(true)} variant="contained">
+          Change login
+        </Button>
+      </Toolbar>
+    </AppBar>
+  );
+}
+
 function App() {
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
 
@@ -156,17 +178,7 @@ function App() {
             manuallyOpen={authDialogOpen}
             setManuallyOpen={(open) => setAuthDialogOpen(open)}
           />
-          <AppBar position="static" sx={{ top: 0 }}>
-            <Toolbar>
-              <Typography sx={{ flexGrow: 1 }}>Space Traders!</Typography>
-              <Button
-                onClick={() => setAuthDialogOpen(true)}
-                variant="contained"
-              >
-                Change login
-              </Button>
-            </Toolbar>
-          </AppBar>
+          <TopBar setAuthDialogOpen={setAuthDialogOpen} />
           <Grid container spacing={1}>
             <Grid xs={8}>
               <AgentCard />

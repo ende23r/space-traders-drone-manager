@@ -111,6 +111,13 @@ export const bearerPostHeaders = (token: string) => {
   };
 };
 
+export function useServerStatus() {
+  return useQuery({
+    queryKey: ["get-status"],
+    queryFn: () => api["get-status"](),
+  });
+}
+
 /**
  * We only want to re-fetch this function when:
  * 1. The player buys a ship
