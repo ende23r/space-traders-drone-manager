@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import { useState } from "react";
 import { useLocalStorage } from "./hooks/useLocalStorage";
-import { useMyAgent, globalQueryClient, useRegisterWithFaction } from "./Api";
+import { useMyAgent, useRegisterWithFaction } from "./Api";
 import { schemas } from "./packages/SpaceTradersAPI";
 import { z } from "zod";
 

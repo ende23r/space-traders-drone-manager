@@ -52,7 +52,7 @@ function computeDistance(shipNav: ShipNav, destinationNav: Waypoint) {
   const originNav = shipNav.route.destination;
   const distance = Math.sqrt(
     Math.pow(destinationNav.x - originNav.x, 2) +
-    Math.pow(destinationNav.y - originNav.y, 2),
+      Math.pow(destinationNav.y - originNav.y, 2),
   );
   return distance;
 }
@@ -76,11 +76,7 @@ function TimedProgress(props: {
   return <LinearProgress variant="determinate" value={progress} />;
 }
 
-function ExtractButton({
-  ship,
-}: {
-  ship: Ship;
-}) {
+function ExtractButton({ ship }: { ship: Ship }) {
   const [mineUntilFull, setMineUntilFull] = useState(false);
 
   const date = useContext(DateContext);
@@ -98,15 +94,14 @@ function ExtractButton({
     "MOUNT_MINING_LASER_I",
     "MOUNT_MINING_LASER_II",
     "MOUNT_MINING_LASER_III",
-  ]
-  const hasMiningLaser = !!ship.mounts.find((mount) => knownMiningLasers.includes(mount.symbol))
+  ];
+  const hasMiningLaser = !!ship.mounts.find((mount) =>
+    knownMiningLasers.includes(mount.symbol),
+  );
   const onCooldown = ship.cooldown.remainingSeconds > 0;
   const extractionDisabled =
-    !inOrbit ||
-    !validMiningLocation ||
-    !hasMiningLaser
-  const extractionButtonDisabled = extractionDisabled ||
-    onCooldown;
+    !inOrbit || !validMiningLocation || !hasMiningLaser;
+  const extractionButtonDisabled = extractionDisabled || onCooldown;
   const disabledTooltip = (
     <div>
       1. In Orbit {checkOrX(inOrbit)}
@@ -135,7 +130,8 @@ function ExtractButton({
     !extractionButtonDisabled &&
     remainingSecs === 0 &&
     ship.cargo.units < ship.cargo.capacity &&
-    status !== "pending" && status !== "error"
+    status !== "pending" &&
+    status !== "error"
   ) {
     triggerExtract();
   }
@@ -145,8 +141,7 @@ function ExtractButton({
       <FormControlLabel
         control={
           <Switch
-            checked={mineUntilFull
-            }
+            checked={mineUntilFull}
             disabled={extractionDisabled}
             onChange={(event) => setMineUntilFull(event.target.checked)}
           />
@@ -156,8 +151,7 @@ function ExtractButton({
       <Tooltip title={disabledTooltip}>
         <span>
           <Button
-            disabled={extractionButtonDisabled
-            }
+            disabled={extractionButtonDisabled}
             onClick={async () => {
               triggerExtract();
             }}
@@ -256,7 +250,11 @@ function ShipCard(props: { ship: Ship; startTransfer: (s: string) => void }) {
           </AccordionSummary>
           <AccordionDetails>
             <List>
-              {ship.mounts.map((mount) => <ListItem><ListItemText primary={mount.symbol} /></ListItem>)}
+              {ship.mounts.map((mount) => (
+                <ListItem>
+                  <ListItemText primary={mount.symbol} />
+                </ListItem>
+              ))}
             </List>
           </AccordionDetails>
         </Accordion>

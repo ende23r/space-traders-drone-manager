@@ -42,16 +42,18 @@ function ShipPurchaseOption(props: {
         <Typography>
           Crew: {data.crew.required}/{data.crew.capacity}
         </Typography>
-        <Typography>
-          Fuel Capacity: {data.frame.fuelCapacity}
-        </Typography>
+        <Typography>Fuel Capacity: {data.frame.fuelCapacity}</Typography>
         <Accordion>
           <AccordionSummary expandIcon={<ExpandMore />}>
             Mounts ({data.mounts.length})
           </AccordionSummary>
           <AccordionDetails>
             <List>
-              {data.mounts.map((mount) => <ListItem><ListItemText primary={mount.symbol} /></ListItem>)}
+              {data.mounts.map((mount) => (
+                <ListItem>
+                  <ListItemText primary={mount.symbol} />
+                </ListItem>
+              ))}
             </List>
           </AccordionDetails>
         </Accordion>
@@ -77,8 +79,8 @@ function ShipSaleList(props: { data: Shipyard | undefined }) {
       {/*<Typography>{data.shipTypes.map((shipType) => shipType.type)}</Typography>*/}
       {data.ships
         ? data.ships.map((ship) => (
-          <ShipPurchaseOption data={ship} waypointSymbol={data.symbol} />
-        ))
+            <ShipPurchaseOption data={ship} waypointSymbol={data.symbol} />
+          ))
         : null}
     </Card>
   );

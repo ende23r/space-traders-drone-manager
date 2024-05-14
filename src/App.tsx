@@ -12,6 +12,9 @@ import {
   CardContent,
   CardActions,
   Typography,
+  AppBar,
+  CssBaseline,
+  Toolbar,
 } from "@mui/material";
 import { createContext, useEffect, useState } from "react";
 import ShipyardList from "./ShipyardList";
@@ -134,6 +137,7 @@ function App() {
 
   return (
     <>
+      <CssBaseline />
       <ToastContainer
         position="top-right"
         autoClose={5000}
@@ -152,15 +156,22 @@ function App() {
             manuallyOpen={authDialogOpen}
             setManuallyOpen={(open) => setAuthDialogOpen(open)}
           />
-          <Grid container spacing={1}>
-            <Grid xs={10}>
-              <AgentCard />
-            </Grid>
-            <Grid xs={2}>
-              <Button onClick={() => setAuthDialogOpen(true)}>
+          <AppBar position="static" sx={{ top: 0 }}>
+            <Toolbar>
+              <Typography sx={{ flexGrow: 1 }}>Space Traders!</Typography>
+              <Button
+                onClick={() => setAuthDialogOpen(true)}
+                variant="contained"
+              >
                 Change login
               </Button>
+            </Toolbar>
+          </AppBar>
+          <Grid container spacing={1}>
+            <Grid xs={8}>
+              <AgentCard />
             </Grid>
+            <Grid xs={2}></Grid>
             <Grid xs={12} md={6}>
               <div>
                 <ShipList />
