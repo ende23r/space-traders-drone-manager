@@ -63,6 +63,7 @@ export type Ship = z.infer<typeof schemas.Ship>;
 // type Meta = z.infer<typeof schemas.Meta>;
 // type Waypoint = z.infer<typeof schemas.Waypoint>;
 export type TradeSymbol = z.infer<typeof schemas.TradeSymbol>;
+export type ShipNavFlightMode = z.infer<typeof schemas.ShipNavFlightMode>;
 
 const noDataAgent: Agent = {
   symbol: "",
@@ -107,6 +108,14 @@ export const bearerPostHeaders = (token: string) => {
   const headers = bearerHeaders(token);
   return {
     method: "POST",
+    ...headers,
+  };
+};
+
+export const bearerPatchHeaders = (token: string) => {
+  const headers = bearerHeaders(token);
+  return {
+    method: "PATCH",
     ...headers,
   };
 };
@@ -717,6 +726,7 @@ export function useFactions() {
     staleTime: Infinity,
   });
 }
+
 async function registerAgent(
   agentSymbol: string,
   faction: FactionSymbol,
@@ -744,6 +754,33 @@ export function useRegisterWithFaction() {
       faction: FactionSymbol;
       callback: Function;
     }) => registerAgent(agentSymbol, faction, callback),
+    onError: handleAxiosError,
+  });
+}
+
+async function patchShipNav(
+  bearerToken: string,
+  shipSymbol: string,
+  { flightMode }: { flightMode: ShipNavFlightMode },
+) {
+  const options = {
+    headers: bearerHeaders(bearerToken),
+    params: {
+      shipSymbol,
+    },
+  };
+  const body = { flightMode };
+  const response = await api["patch-ship-nav"](body, options);
+  globalQueryClient.invalidateQueries({ queryKey: ["get-my-ships"] });
+  return response.data;
+}
+
+export function usePatchShipNav(shipSymbol: string) {
+  const [bearerToken] = useLocalStorage("bearerToken", "");
+  return useMutation({
+    mutationKey: ["patch-ship-nav"],
+    mutationFn: (args: { flightMode: ShipNavFlightMode }) =>
+      patchShipNav(bearerToken, shipSymbol, args),
     onError: handleAxiosError,
   });
 }

@@ -36,6 +36,7 @@ import {
   useJettisonMutation,
   useMyShips,
   useNavigateMutation,
+  usePatchShipNav,
   useSwitchDockingMutation,
   useTransferMutation,
 } from "./Api";
@@ -165,6 +166,27 @@ function ExtractButton({ ship }: { ship: Ship }) {
   );
 }
 
+const flightModes = ["DRIFT", "CRUISE", "BURN", "STEALTH"] as const;
+function FlightModeButton({ ship }: { ship: Ship }) {
+  const { mutate: patchShipNav } = usePatchShipNav(ship.symbol);
+
+  return (
+    <>
+      <Typography variant="h6">Flight Mode:</Typography>
+      <ButtonGroup>
+        {flightModes.map((mode) => (
+          <Button
+            disabled={ship.nav.flightMode === mode}
+            onClick={() => patchShipNav({ flightMode: mode })}
+          >
+            {mode}
+          </Button>
+        ))}
+      </ButtonGroup>
+    </>
+  );
+}
+
 const checkOrX = (b: boolean) => (b ? "✅" : "❌");
 
 function ShipCard(props: { ship: Ship; startTransfer: (s: string) => void }) {
@@ -208,8 +230,7 @@ function ShipCard(props: { ship: Ship; startTransfer: (s: string) => void }) {
   const docked = ship.nav.status === "DOCKED";
   const inOrbit = ship.nav.status === "IN_ORBIT";
   const noNewDest = destination === ship.nav.waypointSymbol;
-  const noFuel = distToDest > ship.fuel.current;
-  const navigationDisabled = !inOrbit || noNewDest || noFuel;
+  const navigationDisabled = !inOrbit || noNewDest;
   const navTooltip = (
     <div>
       Navigation requires 3 things:
@@ -217,8 +238,6 @@ function ShipCard(props: { ship: Ship; startTransfer: (s: string) => void }) {
       1. Ship in orbit {checkOrX(inOrbit)}
       <br />
       2. Destination set {checkOrX(!noNewDest)}
-      <br />
-      3. 1 unit of fuel per unit of distance {checkOrX(!noFuel)}
     </div>
   );
 
@@ -244,6 +263,7 @@ function ShipCard(props: { ship: Ship; startTransfer: (s: string) => void }) {
         <Typography>
           (Fuel: {ship.fuel.current}/{ship.fuel.capacity})
         </Typography>
+        <FlightModeButton ship={ship} />
         <Accordion>
           <AccordionSummary expandIcon={<ExpandMore />}>
             Mounts ({ship.mounts.length})
