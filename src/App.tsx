@@ -16,6 +16,7 @@ import {
   CssBaseline,
   Toolbar,
   Stack,
+  Alert,
 } from "@mui/material";
 import { createContext, useEffect, useState } from "react";
 import ShipyardList from "./ShipyardList";
@@ -30,6 +31,8 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { getSystemSymbol } from "./Util";
 import BearerAuthDialog from "./BearerAuthDialog";
 import { processUpdatesLoop } from "./Scheduler";
+import { jwtDecode } from "jwt-decode"
+import { useLocalStorage } from "./hooks/useLocalStorage";
 
 export const DateContext = createContext(new Date());
 
@@ -135,6 +138,13 @@ function DateContextWrapper(props: { children: any }) {
 
 function TopBar({ setAuthDialogOpen }: { setAuthDialogOpen: Function }) {
   const { data } = useServerStatus();
+  const [bearerToken] = useLocalStorage("bearerToken", "");
+
+  const decodedToken = jwtDecode(bearerToken);
+  const tokenResetDate = new Date((decodedToken as any).reset_date);
+  const serverResetDate = new Date(data?.resetDate || "");
+  const oldToken = tokenResetDate < serverResetDate;
+  console.log({ tokenResetDate, serverResetDate, oldToken })
 
   return (
     <AppBar position="static" sx={{ top: 0 }}>
@@ -142,7 +152,7 @@ function TopBar({ setAuthDialogOpen }: { setAuthDialogOpen: Function }) {
         <Stack sx={{ flexGrow: 1 }}>
           <Typography variant="h4">Space Traders!</Typography>
           <Typography variant="subtitle2">
-            Status: {data?.status} Server Version: {data?.version} Next Reset:{" "}
+            <strong>Status:</strong> {data?.status} <strong>Server Version:</strong> {data?.version} <strong>Last Reset:</strong>{" "}
             {data?.resetDate}{" "}
           </Typography>
         </Stack>
@@ -150,6 +160,7 @@ function TopBar({ setAuthDialogOpen }: { setAuthDialogOpen: Function }) {
           Change login
         </Button>
       </Toolbar>
+      {oldToken ? <Alert severity="warning">Your token is older than the last reset! You may need to register a new agent.</Alert> : null}
     </AppBar>
   );
 }
