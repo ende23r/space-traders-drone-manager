@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { schemas } from "./packages/SpaceTradersAPI";
 import {
   Accordion,
@@ -12,8 +11,6 @@ import {
   List,
   ListItem,
   ListItemText,
-  MenuItem,
-  Select,
   Typography,
 } from "@mui/material";
 import { z } from "zod";
@@ -71,8 +68,7 @@ function ShipSaleList({ shipyardSymbol }: { shipyardSymbol: string }) {
     return null;
   }
   return (
-    <Card>
-      <Typography variant={"h3"}>{shipyardSymbol}</Typography>
+    <>
       <Typography>
         Ship Types:{" "}
         {shipyardData.data.shipTypes
@@ -87,7 +83,7 @@ function ShipSaleList({ shipyardSymbol }: { shipyardSymbol: string }) {
             <ShipPurchaseOption data={ship} waypointSymbol={shipyardSymbol} />
           ))
         : null}
-    </Card>
+    </>
   );
 }
 
@@ -99,26 +95,19 @@ function ShipyardList(props: { systemSymbol: string }) {
     navloc.traits.some((trait: any) => trait.symbol === "SHIPYARD"),
   );
   const shipyardSymbols = shipyardLocations.map((navloc) => navloc.symbol);
-
-  const [shipyardSelected, selectShipyard] = useState(shipyardSymbols[0] || "");
-
   return (
     <div>
-      <Typography variant="h2">Shipyard List!</Typography>
-      <div>
-        <Select
-          value={shipyardSelected}
-          label="Shipyard"
-          onChange={(e) => selectShipyard(e.target.value)}
-        >
-          {shipyardSymbols.map((symbol) => (
-            <MenuItem value={symbol}>{symbol}</MenuItem>
-          ))}
-        </Select>
-      </div>
-      <div>
-        <ShipSaleList shipyardSymbol={shipyardSelected} />
-      </div>
+      <Typography variant="h3">Shipyard List!</Typography>
+      {shipyardSymbols.map((symbol) => (
+        <Accordion>
+          <AccordionSummary expandIcon={<ExpandMore />}>
+            <Typography variant="h4">{symbol}</Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <ShipSaleList shipyardSymbol={symbol} />
+          </AccordionDetails>
+        </Accordion>
+      ))}
     </div>
   );
 }
