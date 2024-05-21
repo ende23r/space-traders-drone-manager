@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { api, schemas } from "./packages/SpaceTradersAPI";
+import { useState } from "react";
+import { schemas } from "./packages/SpaceTradersAPI";
 import {
   Accordion,
   AccordionDetails,
@@ -17,12 +17,10 @@ import {
   Typography,
 } from "@mui/material";
 import { z } from "zod";
-import { getSystemSymbol } from "./Util";
-import { useLocations, usePurchaseShipMutation } from "./Api";
-import { useLocalStorage } from "./hooks/useLocalStorage";
+import { useLocations, usePurchaseShipMutation, useShipyard } from "./Api";
 import { ExpandMore } from "@mui/icons-material";
 
-type Shipyard = z.infer<typeof schemas.Shipyard>;
+// type Shipyard = z.infer<typeof schemas.Shipyard>;
 type ShipyardShip = z.infer<typeof schemas.ShipyardShip>;
 
 function ShipPurchaseOption(props: {
@@ -67,19 +65,26 @@ function ShipPurchaseOption(props: {
   );
 }
 
-function ShipSaleList(props: { data: Shipyard | undefined }) {
-  const { data } = props;
-  if (!data) {
+function ShipSaleList({ shipyardSymbol }: { shipyardSymbol: string }) {
+  const { data: shipyardData } = useShipyard(shipyardSymbol);
+  if (!shipyardData) {
     return null;
   }
   return (
     <Card>
-      <Typography variant={"h3"}>{data.symbol}</Typography>
-      <Typography>Modification Fee: {data.modificationsFee}</Typography>
-      {/*<Typography>{data.shipTypes.map((shipType) => shipType.type)}</Typography>*/}
-      {data.ships
-        ? data.ships.map((ship) => (
-            <ShipPurchaseOption data={ship} waypointSymbol={data.symbol} />
+      <Typography variant={"h3"}>{shipyardSymbol}</Typography>
+      <Typography>
+        Ship Types:{" "}
+        {shipyardData.data.shipTypes
+          .map((shipType) => shipType.type)
+          .join(", ")}
+      </Typography>
+      <Typography>
+        Modification Fee: {shipyardData.data.modificationsFee}
+      </Typography>
+      {shipyardData.data.ships
+        ? shipyardData.data.ships.map((ship) => (
+            <ShipPurchaseOption data={ship} waypointSymbol={shipyardSymbol} />
           ))
         : null}
     </Card>
@@ -88,7 +93,6 @@ function ShipSaleList(props: { data: Shipyard | undefined }) {
 
 function ShipyardList(props: { systemSymbol: string }) {
   const { systemSymbol } = props;
-  const [bearerToken] = useLocalStorage("bearerToken", "");
   const { data: navData } = useLocations(systemSymbol);
   const navLocations = navData || [];
   const shipyardLocations = navLocations.filter((navloc) =>
@@ -97,25 +101,6 @@ function ShipyardList(props: { systemSymbol: string }) {
   const shipyardSymbols = shipyardLocations.map((navloc) => navloc.symbol);
 
   const [shipyardSelected, selectShipyard] = useState(shipyardSymbols[0] || "");
-  const [shipyardData, setShipyardData] = useState<Shipyard>();
-
-  useEffect(() => {
-    const queryShipyard = async () => {
-      const response = await api["get-shipyard"]({
-        params: {
-          systemSymbol: getSystemSymbol(shipyardSelected),
-          waypointSymbol: shipyardSelected,
-        },
-        headers: {
-          Authorization: `Bearer ${bearerToken}`,
-        },
-      });
-      setShipyardData(response.data);
-    };
-    if (shipyardSelected) {
-      queryShipyard();
-    }
-  }, [shipyardSelected]);
 
   return (
     <div>
@@ -132,7 +117,7 @@ function ShipyardList(props: { systemSymbol: string }) {
         </Select>
       </div>
       <div>
-        <ShipSaleList data={shipyardData} />
+        <ShipSaleList shipyardSymbol={shipyardSelected} />
       </div>
     </div>
   );

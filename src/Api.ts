@@ -342,8 +342,12 @@ async function triggerNavigation(
   const response = await api["navigate-ship"](body, options);
   globalQueryClient.invalidateQueries({ queryKey: ["get-my-ships"] });
   scheduleUpdate({
-    callback: () =>
-      globalQueryClient.invalidateQueries({ queryKey: ["get-my-ships"] }),
+    callback: () => {
+      globalQueryClient.invalidateQueries({ queryKey: ["get-my-ships"] });
+      globalQueryClient.invalidateQueries({
+        queryKey: ["get-shipyard", waypointSymbol],
+      });
+    },
     scheduledTime: new Date(response.data.nav.route.arrival),
   });
   return response.data;
@@ -694,6 +698,9 @@ export function usePurchaseShipMutation(
     mutationFn: () => purchaseShip(bearerToken, shipType, waypointSymbol),
     onSuccess: () => {
       toast(`Purchased ${shipType}.`);
+      globalQueryClient.invalidateQueries({
+        queryKey: ["get-shipyard", waypointSymbol],
+      });
     },
     onError: handleAxiosError,
   });
@@ -787,6 +794,26 @@ export function usePatchShipNav(shipSymbol: string) {
     mutationFn: (args: { flightMode: ShipNavFlightMode }) =>
       patchShipNav(bearerToken, shipSymbol, args),
     onError: handleAxiosError,
+  });
+}
+
+const queryShipyard = async (bearerToken: string, shipyardSymbol: string) => {
+  return await api["get-shipyard"]({
+    params: {
+      systemSymbol: getSystemSymbol(shipyardSymbol),
+      waypointSymbol: shipyardSymbol,
+    },
+    headers: bearerHeaders(bearerToken),
+  });
+};
+
+export function useShipyard(shipyardSymbol: string) {
+  const [bearerToken] = useLocalStorage("bearerToken", "");
+  return useQuery({
+    queryKey: ["get-shipyard", shipyardSymbol],
+    queryFn: () => queryShipyard(bearerToken, shipyardSymbol),
+    enabled: !!bearerToken && !!shipyardSymbol.length,
+    retry: false,
   });
 }
 
