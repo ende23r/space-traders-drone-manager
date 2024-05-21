@@ -152,6 +152,8 @@ export function useContracts() {
     queryFn: () => api["get-contracts"](bearerOptions(bearerToken)),
     enabled: !!bearerToken,
     retry: false,
+    // Make this function never re-fetch
+    staleTime: Infinity,
   });
 }
 
@@ -270,7 +272,7 @@ async function acceptContract(bearerToken: string, contractId: string) {
       contractId,
     },
   };
-  const result = api["accept-contract"](undefined, options);
+  const result = await api["accept-contract"](undefined, options);
   globalQueryClient.invalidateQueries({ queryKey: ["get-contracts"] });
   return result;
 }
@@ -280,6 +282,9 @@ export function useAcceptContractMutation(contractId: string) {
   return useMutation({
     mutationKey: ["accept-contract"],
     mutationFn: () => acceptContract(bearerToken, contractId),
+    onSuccess: (response) => {
+      toast(`Received $${response.data.contract.terms.payment.onAccepted}`);
+    },
     onError: handleAxiosError,
   });
 }
@@ -289,7 +294,7 @@ async function negotiateContract(bearerToken: string, shipSymbol: string) {
     headers: bearerPostHeaders(bearerToken),
     params: { shipSymbol },
   };
-  const result = api["negotiateContract"](undefined, options);
+  const result = await api["negotiateContract"](undefined, options);
   globalQueryClient.invalidateQueries({ queryKey: ["get-contracts"] });
   return result;
 }

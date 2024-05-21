@@ -213,9 +213,9 @@ function ShipCard(props: { ship: Ship; startTransfer: (s: string) => void }) {
   const { mutate: jettison } = useJettisonMutation(ship.symbol);
 
   const { data: contractData } = useContracts();
-  const topContract = contractData?.data[0];
+  const activeContract = contractData?.data.at(-1);
   const { mutate: deliverContract } = useDeliverContractMutation(
-    topContract?.id || "",
+    activeContract?.id || "",
   );
 
   const destinationNav =
