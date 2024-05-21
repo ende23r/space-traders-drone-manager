@@ -79,8 +79,12 @@ function ShipSaleList({ shipyardSymbol }: { shipyardSymbol: string }) {
         Modification Fee: {shipyardData.data.modificationsFee}
       </Typography>
       {shipyardData.data.ships
-        ? shipyardData.data.ships.map((ship) => (
-            <ShipPurchaseOption data={ship} waypointSymbol={shipyardSymbol} />
+        ? shipyardData.data.ships.map((ship, index) => (
+            <ShipPurchaseOption
+              key={`${shipyardSymbol}:${index}`}
+              data={ship}
+              waypointSymbol={shipyardSymbol}
+            />
           ))
         : null}
     </>
