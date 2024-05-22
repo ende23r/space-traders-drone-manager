@@ -140,11 +140,16 @@ function TopBar({ setAuthDialogOpen }: { setAuthDialogOpen: Function }) {
   const { data } = useServerStatus();
   const [bearerToken] = useLocalStorage("bearerToken", "");
 
-  const decodedToken = jwtDecode(bearerToken);
-  const tokenResetDate = new Date((decodedToken as any).reset_date);
+  let tokenResetDate = new Date(NaN);
+  try {
+    const decodedToken = jwtDecode(bearerToken);
+    tokenResetDate = new Date((decodedToken as any).reset_date);
+  } catch (e) {
+    console.log(e);
+  }
   const serverResetDate = new Date(data?.resetDate || "");
   const oldToken = tokenResetDate < serverResetDate;
-  console.log({ tokenResetDate, serverResetDate, oldToken });
+  // console.log({ tokenResetDate, serverResetDate, oldToken });
 
   return (
     <AppBar position="static" sx={{ top: 0 }}>
