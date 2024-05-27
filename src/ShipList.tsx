@@ -188,6 +188,8 @@ function FlightModeButton({ ship }: { ship: Ship }) {
 }
 
 const checkOrX = (b: boolean) => (b ? "✅" : "❌");
+const renderWithDigits = (n: number, d: number) =>
+  (Math.round(n * 10 ** d) / 10 ** d).toFixed(d);
 
 function ShipCard(props: { ship: Ship; startTransfer: (s: string) => void }) {
   const { ship, startTransfer } = props;
@@ -253,6 +255,19 @@ function ShipCard(props: { ship: Ship; startTransfer: (s: string) => void }) {
 
   const inTransit = ship.nav.status === "IN_TRANSIT";
 
+  const conditionDisplay = (
+    <>
+      <Typography>
+        Frame Condition: {renderWithDigits(ship.frame.condition, 2)}
+      </Typography>
+      <Typography>
+        Reactor Condition: {renderWithDigits(ship.reactor.condition, 2)}
+      </Typography>
+      <Typography>
+        Engine Condition: {renderWithDigits(ship.engine.condition, 2)}
+      </Typography>
+    </>
+  );
   return (
     <Card variant="outlined">
       <CardHeader
@@ -260,6 +275,7 @@ function ShipCard(props: { ship: Ship; startTransfer: (s: string) => void }) {
         subheader={`${ship.registration.role} (${ship.registration.factionSymbol})`}
       />
       <CardContent>
+        {conditionDisplay}
         <Typography>
           (Fuel: {ship.fuel.current}/{ship.fuel.capacity})
         </Typography>
