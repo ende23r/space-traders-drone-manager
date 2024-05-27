@@ -42,7 +42,7 @@ function ContractCard() {
 
   const { agent } = useMyAgent();
   const { data: shipData } = useMyShips();
-  const shipList = shipData?.data || [];
+  const shipList = shipData || [];
   const shipAtHQ = shipList.find(
     (ship) =>
       ship.nav.waypointSymbol === agent.headquarters &&

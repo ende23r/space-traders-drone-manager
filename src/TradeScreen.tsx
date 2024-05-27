@@ -95,7 +95,7 @@ function Market(props: { waypointSymbol: string }) {
 
   const { data: marketData } = useMarketDetails(waypointSymbol);
   const { data: shipData } = useMyShips();
-  const shipList = shipData?.data || [];
+  const shipList = shipData || [];
   const tradeShips = shipList.filter(
     (ship) => ship.nav.waypointSymbol === waypointSymbol,
   );

@@ -466,7 +466,7 @@ function TransferDialog({
 
 function ShipList() {
   const { data } = useMyShips();
-  const shipList = data?.data || [];
+  const shipList = data || [];
   const [transferFromShipSymbol, setTransferFromShipSymbol] = useState("");
   return (
     <>

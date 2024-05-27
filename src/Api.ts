@@ -163,11 +163,29 @@ export function useContracts() {
  * 2. The player triggers a change in ship state
  * 3. A scheduled ship update has likely happened (e.g. ship reached destination, cooldown done)
  */
+async function queryMyShips(bearerToken: string) {
+  const options = {
+    headers: bearerHeaders(bearerToken),
+    queries: {
+      page: 1,
+      limit: 20,
+    },
+  };
+  const firstResult = await api["get-my-ships"](options);
+  const ships = firstResult.data;
+  while (ships.length < firstResult.meta.total) {
+    options.queries.page += 1;
+    const nextResult = await api["get-my-ships"](options);
+    ships.push(...nextResult.data);
+  }
+  return ships;
+}
+
 export function useMyShips() {
   const [bearerToken] = useLocalStorage("bearerToken", "");
   return useQuery({
     queryKey: ["get-my-ships"],
-    queryFn: () => api["get-my-ships"](bearerOptions(bearerToken)),
+    queryFn: () => queryMyShips(bearerToken),
     enabled: !!bearerToken,
     retry: false,
     // Make this function never re-fetch
